@@ -100,11 +100,11 @@ const postList = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
-   Chatter Moments — file list for chatters/ directory
-   Add new .md filename here when you create a new 说说 post.
+   Chatter Files — 说说页面的 Markdown 文件列表
+   新增说说时：把新 md 文件的路径加到这个数组即可。
    ═══════════════════════════════════════════════════════════════ */
-const chatterMomentsList = [
-  '2026-05-12.md'
+const chatterFiles = [
+  'chatters/2026-05-12.md'
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -635,25 +635,28 @@ const chatterMomentsList = [
     const container = document.getElementById('momentsList');
     if (!container) return;
 
-    const basePath = 'chatters/';
     const moments = [];
 
-    for (var i = 0; i < chatterMomentsList.length; i++) {
+    for (var i = 0; i < chatterFiles.length; i++) {
+      var file = chatterFiles[i];
+      console.log('loading chatter: ' + file);
       try {
-        var res = await fetch(basePath + chatterMomentsList[i]);
-        if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+        var url = file + '?t=' + Date.now();
+        var res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
         var md = await res.text();
         var fm = parseFrontmatter(md);
         moments.push({
-          filename: chatterMomentsList[i],
+          filename: file,
           title: fm.title || '',
           date: fm.date || '',
           time: fm.time || '',
           tags: fm.tags || [],
           content: fm.content || md
         });
+        console.log('chatter loaded: ' + file);
       } catch (err) {
-        console.warn('Failed to load moment: ' + chatterMomentsList[i], err);
+        console.warn('chatter load failed: ' + file, err);
       }
     }
 
@@ -744,7 +747,7 @@ const chatterMomentsList = [
   /* ── Simple frontmatter parser ── */
   function parseFrontmatter(md) {
     const result = { title: '', date: '', time: '', tags: [], mood: '', content: md };
-    const match = md.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
+    const match = md.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n([\s\S]*)$/);
     if (!match) return result;
 
     const fm = match[1];
