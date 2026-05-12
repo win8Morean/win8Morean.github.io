@@ -646,6 +646,7 @@ const chatterMomentsList = [
         var fm = parseFrontmatter(md);
         moments.push({
           filename: chatterMomentsList[i],
+          title: fm.title || '',
           date: fm.date || '',
           time: fm.time || '',
           tags: fm.tags || [],
@@ -684,6 +685,11 @@ const chatterMomentsList = [
 
       var contentHTML = marked.parse(m.content.trim());
 
+      var titleHTML = '';
+      if (m.title) {
+        titleHTML = '<h3 class="moment-title">' + m.title + '</h3>';
+      }
+
       return '' +
         '<div class="moment-card">' +
           '<div class="moment-header">' +
@@ -695,6 +701,7 @@ const chatterMomentsList = [
               '<span class="moment-time">' + dateDisplay + '</span>' +
             '</div>' +
           '</div>' +
+          titleHTML +
           '<div class="moment-body">' + contentHTML + '</div>' +
           tagsHTML +
         '</div>';

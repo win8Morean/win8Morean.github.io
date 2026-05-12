@@ -973,6 +973,7 @@ body {
 .moment-meta { display: flex; flex-direction: column; }
 .moment-author { font-size: 14px; font-weight: 700; color: var(--slate-900); }
 .moment-time { font-size: 11px; color: var(--slate-500); font-family: var(--font-mono); }
+.moment-title { font-size: 17px; font-weight: 800; color: var(--slate-900); margin: 0 0 10px 0; letter-spacing: -0.01em; }
 .moment-body { font-size: 15px; color: var(--slate-700); line-height: 1.8; font-family: var(--font-serif); }
 .moment-body p { margin-bottom: 8px; }
 .moment-body p:last-child { margin-bottom: 0; }
