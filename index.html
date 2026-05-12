@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>w1n8 | Web Security</title>
+  <link rel="icon" href="images/tomori.jpg" type="image/jpeg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Serif+SC:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+</head>
+<body>
+
+  <!-- ═══ Global Background Slideshow ═══ -->
+  <div id="global-bg-slider"></div>
+
+  <!-- ═══ Danmaku Layer ═══ -->
+  <div id="danmaku-container"></div>
+
+  <!-- ═══ Background Layers ═══ -->
+  <div class="bg-scene"></div>
+  <div class="bg-gradient"></div>
+  <div class="bg-orbs">
+    <div class="orb orb--tl"></div>
+    <div class="orb orb--br"></div>
+    <div class="orb orb--ct"></div>
+  </div>
+
+  <!-- ═══ Fixed Navbar (Desktop) ═══ -->
+  <header class="navbar" id="navbar">
+    <div class="navbar-inner">
+      <a href="#" class="nav-logo" id="navLogo" data-action="home" title="返回首页">
+        w1n8<span class="nav-logo-sep">/</span><span class="nav-logo-sub">lab</span>
+      </a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#" class="nav-link active" data-action="home">首页</a>
+        <a href="#" class="nav-link" data-action="projects">项目</a>
+        <a href="#" class="nav-link" data-action="writeups">归档</a>
+        <a href="#" class="nav-link" data-action="photos">照片墙</a>
+        <a href="#" class="nav-link" data-action="music">音乐</a>
+        <a href="#" class="nav-link" data-action="moments">说说</a>
+        <a href="#" class="nav-link" data-action="chatter">杂谈</a>
+        <a href="#" class="nav-link" data-action="friends">友链</a>
+        <a href="#" class="nav-link" data-action="about">关于</a>
+      </nav>
+      <button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换亮色/暗色主题">
+        <svg class="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="navbar-glow"></div>
+  </header>
+
+  <!-- ═══ Mobile Search Bar ═══ -->
+  <div class="mobile-search-bar" id="mobileSearchBar">
+    <div class="mobile-search-inner">
+      <svg class="mobile-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" class="mobile-search-input" placeholder="搜索标题、描述或标签..." readonly>
+    </div>
+  </div>
+
+  <!-- ═══ Mobile Radial Menu ═══ -->
+  <div class="radial-backdrop" id="radialBackdrop"></div>
+  <div class="radial-menu" id="radialMenu">
+    <button class="radial-center-btn" id="radialClose">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="radial-ring" id="radialRing">
+      <button class="radial-item" data-action="home" data-label="首页">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+      <button class="radial-item" data-action="projects" data-label="项目">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </button>
+      <button class="radial-item" data-action="writeups" data-label="归档">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+      <button class="radial-item" data-action="photos" data-label="照片墙">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </button>
+      <button class="radial-item" data-action="music" data-label="音乐">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </button>
+      <button class="radial-item" data-action="moments" data-label="说说">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <button class="radial-item" data-action="chatter" data-label="杂谈">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </button>
+      <button class="radial-item" data-action="friends" data-label="友链">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </button>
+      <button class="radial-item" data-action="about" data-label="关于">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </button>
+    </div>
+  </div>
+  <button class="mobile-fab" id="mobileFab" aria-label="菜单">
+    <span class="fab-icon-open">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+    </span>
+  </button>
+
+  <!-- ═══ Home View: Bento Grid Dashboard ═══ -->
+  <main class="home-view" id="homeView">
+    <div class="bento-grid">
+
+      <!-- ── Profile Card (2 cols) ── -->
+      <div class="bento-card bento-profile">
+        <div class="bento-profile-inner">
+          <div class="bento-avatar-ring">
+            <div class="bento-avatar">
+              <img src="images/tomori.jpg" alt="avatar">
+            </div>
+          </div>
+          <div class="bento-profile-info">
+            <h1 class="bento-name">
+              <span id="typewriter"></span><span class="cursor" id="cursor">|</span>
+            </h1>
+            <p class="bento-slogan">> Web security.</p>
+            <p class="bento-tags">CTF Player / Web Security</p>
+          </div>
+        </div>
+        <div class="bento-profile-actions" id="nav">
+          <button class="bento-chip" data-action="writeups">归档</button>
+          <button class="bento-chip" data-action="projects">项目</button>
+          <button class="bento-chip" data-action="photos">照片</button>
+          <button class="bento-chip" data-action="about">关于</button>
+        </div>
+        <div class="bento-social-links">
+          <!-- GitHub -->
+          <a href="https://github.com/win8Morean" target="_blank" title="GitHub" class="social-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+          </a>
+          <!-- Email -->
+          <a href="mailto:zyx20070827@163.com" title="Email me" class="social-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="M22 4L12 13 2 4"/>
+            </svg>
+          </a>
+          <!-- QQ -->
+          <a href="#" onclick="showQRCode('qq'); return false;" title="QQ交谈" class="social-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21.395 15.035c-.79-2.11-1.66-2.96-1.71-5.3-.03-1.34-.42-2.44-1.05-3.27-.36-.48-.82-.88-1.35-1.14-.12-.5-.28-.9-.46-1.02-.23-.16-.51-.14-.78.08-.24.2-.44.57-.58 1-.29.1-.56.25-.74.47-.18.22-.28.5-.28.79 0 .34.12.7.35.96.49.55 1.21.78 1.96.63.18-.04.35-.1.5-.18.05.11.08.23.11.36.09.4.12.86.12 1.37 0 .51-.04 1.03-.11 1.47-.04.24-.1.42-.17.55-.09.16-.2.26-.32.26-.09 0-.18-.06-.25-.16-.14-.2-.23-.5-.23-.86s.05-.71.11-1.01c.04-.22.07-.38.07-.47 0-.12-.05-.18-.13-.18-.05 0-.12.03-.19.1-.14.14-.28.41-.36.77-.1.44-.11.93-.02 1.35.07.3.19.53.37.66.13.1.28.14.42.11.16-.03.3-.14.37-.36-.28.83-.64 1.62-1.07 2.34-.78 1.3-1.79 2.26-2.92 2.84l-.02.01c-.35.18-.7.33-1.04.44.2.78.47 1.74.72 2.64.08.28.30.48.58.48h.17c1.83-.31 3.75-1.44 5.29-3.06 1.11-1.16 1.99-2.54 2.56-3.93zM13.5 9.72c0 .16-.03.32-.08.45-.16.44-.51.53-.74.53-.28 0-.52-.18-.66-.48-.1-.22-.12-.49-.06-.75.07-.28.21-.52.42-.67.16-.12.35-.16.51-.1.17.06.38.22.48.43.1.2.14.43.14.59zM3.07 14.71c.89 1.52 2.09 2.79 3.53 3.6l.03.02c.3.17.62.31.96.41-.07-.38-.18-.8-.31-1.22-.04-.12-.11-.18-.2-.21-.42-.1-.82-.26-1.2-.49-1.31-.78-2.36-1.99-3.01-3.45-.36-.8-.61-1.67-.73-2.55-.12-.86-.12-1.7.01-2.46.13-.76.36-1.44.67-1.99.25-.44.55-.78.88-.98.29-.18.6-.25.89-.18.29.07.55.26.73.56.18.3.25.7.18 1.16-.03.16-.09.3-.17.44-.1.17-.12.33-.06.47.05.12.17.2.32.18.22-.03.49-.27.68-.64.15-.28.26-.57.21-.78-.04-.21-.03-.4.04-.52.1-.2.27-.32.49-.28.18.03.38.2.55.48.31.52.56 1.22.69 2.02.06.39.09.75.09 1.08 0 .28-.02.52-.06.7-.05.26-.13.44-.24.52-.05.04-.11.05-.17.03-.05-.03-.1-.1-.13-.2-.03-.11-.04-.24 0-.38.04-.24.09-.57.09-.95z"/>
+            </svg>
+          </a>
+          <!-- WeChat (clipboard copy) -->
+          <a href="#" onclick="showQRCode('wechat'); return false;" title="复制微信号" class="social-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.33.33 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.704-1.415 3.931-1.98 5.967-1.837-.576-3.802-4.232-6.796-8.69-6.796zM5.965 6.998c.512 0 .93.406.93.91a.92.92 0 01-.93.91.92.92 0 01-.93-.91c0-.503.418-.91.93-.91zm4.82 0c.512 0 .93.406.93.91a.92.92 0 01-.93.91.92.92 0 01-.93-.91c0-.503.418-.91.93-.91zM15.692 12.2c-3.24 0-5.88 2.027-5.88 4.53 0 2.503 2.64 4.53 5.88 4.53 1.064 0 2.093-.218 2.99-.617a.98.98 0 01.764-.09l1.571.75a.293.293 0 00.152.046c.138 0 .25-.11.25-.245a.36.36 0 00-.041-.18l-.317-1.182a.537.537 0 01.17-.565C22.863 18.44 24 16.78 24 14.93c0-1.505-1.035-2.856-2.684-3.764-.85.676-1.964 1.034-3.284 1.034-.816 0-1.594-.194-2.34-.194zm-1.327 2.569c.429 0 .78.324.78.72a.752.752 0 01-.78.722.752.752 0 01-.78-.722c0-.397.351-.72.78-.72zm3.94 0c.43 0 .781.324.781.72a.752.752 0 01-.78.722.752.752 0 01-.781-.722c0-.397.351-.72.78-.72z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- ── Music Sync Card (1 col) ── -->
+      <div class="bento-card music-sync-card" id="musicSyncCard">
+        <div class="sync-glow"></div>
+        <img src="" alt="Cover" class="sync-cover" id="syncCover">
+        <div class="sync-info">
+          <div class="sync-badge">NOW PLAYING</div>
+          <h3 class="sync-title" id="syncTitle">等待播放...</h3>
+          <p class="sync-author" id="syncAuthor">MetingJS</p>
+        </div>
+        <div class="sync-eq">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- ── Lyric Bar (3 cols) ── -->
+      <div class="bento-card lyric-bar" id="lyricBar">
+        <span class="lyric-label">♪</span>
+        <span class="lyric-text" id="syncLyricText">享受音乐中...</span>
+      </div>
+
+      <!-- ── Poster: Writeups ── -->
+      <div class="bento-card bento-poster bento-poster--writeups" data-action="writeups">
+        <div class="bento-poster-bg"></div>
+        <div class="bento-poster-content">
+          <span class="bento-poster-icon">#</span>
+          <span class="bento-poster-title">Writeups</span>
+          <span class="bento-poster-sub">CTF 题解 & 技术归档</span>
+        </div>
+      </div>
+
+      <!-- ── Poster: Photos ── -->
+      <div class="bento-card bento-poster bento-poster--photos" data-action="photos">
+        <div class="bento-poster-bg"></div>
+        <div class="bento-poster-content">
+          <span class="bento-poster-icon">▣</span>
+          <span class="bento-poster-title">照片墙</span>
+          <span class="bento-poster-sub">生活瞬间</span>
+        </div>
+      </div>
+
+      <!-- ── Poster: 学习 ── -->
+      <div class="bento-card bento-poster bento-poster--lab" data-action="projects">
+        <div class="bento-poster-bg"></div>
+        <div class="bento-poster-content">
+          <span class="bento-poster-icon">⌘</span>
+          <span class="bento-poster-title">学习</span>
+          <span class="bento-poster-sub">笔记 & 心得</span>
+        </div>
+      </div>
+
+      <!-- ── Footer Clock Bar (3 cols) ── -->
+      <div class="bento-card bento-footer">
+        <div class="bento-clock" id="bentoClock">00:00:00</div>
+        <div class="bento-status">
+          <span class="bento-status-dot"></span>
+          <span>ONLINE</span>
+        </div>
+        <div class="bento-badges">
+          <span class="bento-badge">HTML5</span>
+          <span class="bento-badge">CSS3</span>
+          <span class="bento-badge">Vanilla JS</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ═══ Content View: all non-home pages render here ═══ -->
+  <div class="content-view" id="contentView">
+    <div class="content-view-inner" id="contentInner">
+      <!-- dynamic content injected by SPA router -->
+    </div>
+  </div>
+
+  <!-- ═══ Article Detail Panel (for reading .md files) ═══ -->
+  <div class="article-overlay" id="articleOverlay">
+    <div class="article-card" id="articleCard">
+      <div class="article-header">
+        <div class="article-back-wrap">
+          <button class="article-back" id="articleBack">
+            <svg class="back-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>返回列表</span>
+          </button>
+        </div>
+        <span class="article-path" id="articlePath">~/writeups/article.md</span>
+      </div>
+      <div class="article-body" id="articleBody"></div>
+    </div>
+  </div>
+
+  <!-- ═══ MetingJS Global Music Player ═══ -->
+  <meting-js
+    server="netease"
+    type="playlist"
+    id="17962196278"
+    fixed="true"
+    autoplay="false"
+    loop="all"
+    order="list"
+    preload="auto"
+    list-folded="true"
+    list-max-height="400px">
+  </meting-js>
+
+  <!-- ═══ Visitor Badge ═══ -->
+  <div class="visitor-badge" id="visitorBadge">
+    <span id="busuanzi_container_site_pv">
+      <span class="visitor-dot"></span>
+      <span id="busuanzi_value_site_pv" class="visitor-num">--</span>
+      <span>visits</span>
+    </span>
+  </div>
+
+  <!-- ═══ Canvas & Particles ═══ -->
+  <canvas id="rippleCanvas"></canvas>
+  <div class="fireflies" id="fireflies"></div>
+
+  <!-- ═══ QR Code Modal ═══ -->
+  <div class="qr-overlay" id="qrOverlay">
+    <div class="qr-modal">
+      <button class="qr-close" id="qrClose" title="关闭">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <img class="qr-image" id="qrImage" src="" alt="QR Code">
+      <span class="qr-label" id="qrLabel"></span>
+    </div>
+  </div>
+
+  <!-- ═══ Scripts ═══ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
