@@ -100,6 +100,14 @@ const postList = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
+   Chatter Moments — file list for chatters/ directory
+   Add new .md filename here when you create a new 说说 post.
+   ═══════════════════════════════════════════════════════════════ */
+const chatterMomentsList = [
+  '2026-05-12.md'
+];
+
+/* ═══════════════════════════════════════════════════════════════
    SPA Router — 9 Sections
    ═══════════════════════════════════════════════════════════════ */
 (() => {
@@ -611,24 +619,86 @@ const postList = [
     updateActiveNav('moments');
     document.title = '说说 | w1n8';
 
-    const moments = [];
-
     contentInner.innerHTML =
       sectionHTML('说说', 'MOMENTS — 碎片化记录') +
-      '<div class="moments-list">' +
-        moments.map(m => '' +
-          '<div class="moment-card">' +
-            '<div class="moment-header">' +
-              '<div class="moment-avatar">' + m.mood + '</div>' +
-              '<div class="moment-meta">' +
-                '<span class="moment-author">' + m.author + '</span>' +
-                '<span class="moment-time">' + m.time + '</span>' +
-              '</div>' +
-            '</div>' +
-            '<div class="moment-body">' + m.content + '</div>' +
-          '</div>'
-        ).join('') +
+      '<div class="moments-list" id="momentsList">' +
+        '<div class="moments-loading">' +
+          '<div class="moments-loading-spin"></div>' +
+          '<p>加载说说中...</p>' +
+        '</div>' +
       '</div>';
+
+    loadMoments();
+  }
+
+  async function loadMoments() {
+    const container = document.getElementById('momentsList');
+    if (!container) return;
+
+    const basePath = 'chatters/';
+    const moments = [];
+
+    for (var i = 0; i < chatterMomentsList.length; i++) {
+      try {
+        var res = await fetch(basePath + chatterMomentsList[i]);
+        if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+        var md = await res.text();
+        var fm = parseFrontmatter(md);
+        moments.push({
+          filename: chatterMomentsList[i],
+          date: fm.date || '',
+          time: fm.time || '',
+          tags: fm.tags || [],
+          content: fm.content || md
+        });
+      } catch (err) {
+        console.warn('Failed to load moment: ' + chatterMomentsList[i], err);
+      }
+    }
+
+    moments.sort(function(a, b) {
+      var da = a.date + (a.time || '00:00');
+      var db = b.date + (b.time || '00:00');
+      if (da > db) return -1;
+      if (da < db) return 1;
+      return 0;
+    });
+
+    if (moments.length === 0) {
+      container.innerHTML = '<div class="post-list-empty">还没有说说，敬请期待。</div>';
+      return;
+    }
+
+    container.innerHTML = moments.map(function(m) {
+      var dateDisplay = m.date;
+      if (m.time) dateDisplay += ' ' + m.time;
+
+      var tagsHTML = '';
+      if (m.tags.length > 0) {
+        tagsHTML = '<div class="moment-tags">' +
+          m.tags.map(function(t) {
+            return '<span class="moment-tag">#' + t + '</span>';
+          }).join('') +
+        '</div>';
+      }
+
+      var contentHTML = marked.parse(m.content.trim());
+
+      return '' +
+        '<div class="moment-card">' +
+          '<div class="moment-header">' +
+            '<div class="moment-avatar">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+            '</div>' +
+            '<div class="moment-meta">' +
+              '<span class="moment-author">w1n8</span>' +
+              '<span class="moment-time">' + dateDisplay + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="moment-body">' + contentHTML + '</div>' +
+          tagsHTML +
+        '</div>';
+    }).join('');
   }
 
   /* ═══════════════════════════════════════════
@@ -666,32 +736,47 @@ const postList = [
 
   /* ── Simple frontmatter parser ── */
   function parseFrontmatter(md) {
-    const result = { title: '', date: '', tags: [], mood: '', content: md };
+    const result = { title: '', date: '', time: '', tags: [], mood: '', content: md };
     const match = md.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
     if (!match) return result;
 
     const fm = match[1];
     result.content = match[2] || md;
 
+    let collectingTags = false;
+
     fm.split('\n').forEach(line => {
-      const kv = line.match(/^(\w+):\s*(.+)$/);
+      var tagItem = line.match(/^\s+-\s+(.+)$/);
+      if (collectingTags && tagItem) {
+        result.tags.push(tagItem[1].trim().replace(/['"]/g, ''));
+        return;
+      }
+      collectingTags = false;
+
+      var kv = line.match(/^(\w+):\s*(.*)$/);
       if (!kv) return;
-      const key = kv[1].trim();
-      let val = kv[2].trim();
+      var key = kv[1].trim();
+      var val = kv[2].trim();
 
       if (key === 'tags') {
-        result.tags = val.replace(/[\[\]]/g, '').split(',').map(t => t.trim().replace(/['"]/g, '')).filter(Boolean);
+        if (val) {
+          result.tags = val.replace(/[\[\]]/g, '').split(',').map(function(t) { return t.trim().replace(/['"]/g, ''); }).filter(Boolean);
+        } else {
+          collectingTags = true;
+        }
       } else if (key === 'title') {
         result.title = val.replace(/['"]/g, '');
       } else if (key === 'date') {
         result.date = val;
+      } else if (key === 'time') {
+        result.time = val;
       } else if (key === 'mood') {
         result.mood = val;
       }
     });
 
     if (!result.title) {
-      const h1 = result.content.match(/^#\s+(.+)$/m);
+      var h1 = result.content.match(/^#\s+(.+)$/m);
       if (h1) result.title = h1[1].trim();
     }
 

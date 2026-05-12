@@ -942,6 +942,17 @@ body {
    9. Moment Cards
    ────────────────────────────────────────── */
 .moments-list { display: flex; flex-direction: column; gap: 16px; }
+.moments-loading {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 48px 0; color: var(--slate-500); font-size: 13px;
+}
+.moments-loading-spin {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--border-glass);
+  border-top-color: var(--accent);
+  animation: momentsSpin 0.7s linear infinite;
+}
+@keyframes momentsSpin { to { transform: rotate(360deg); } }
 .moment-card {
   background: var(--white-glass);
   backdrop-filter: blur(20px) saturate(1.6);
@@ -957,13 +968,16 @@ body {
   background: linear-gradient(135deg,var(--accent),var(--purple));
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 14px; font-weight: 700;
+  flex-shrink: 0;
 }
 .moment-meta { display: flex; flex-direction: column; }
 .moment-author { font-size: 14px; font-weight: 700; color: var(--slate-900); }
 .moment-time { font-size: 11px; color: var(--slate-500); font-family: var(--font-mono); }
 .moment-body { font-size: 15px; color: var(--slate-700); line-height: 1.8; font-family: var(--font-serif); }
+.moment-body p { margin-bottom: 8px; }
+.moment-body p:last-child { margin-bottom: 0; }
+.moment-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
 .moment-tag {
-  display: inline-block; margin-top: 10px;
   font-size: 11px; font-weight: 700; padding: 4px 10px;
   border-radius: var(--radius-full);
   background: rgba(99,102,241,0.06); color: var(--accent);
