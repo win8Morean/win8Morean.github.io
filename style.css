@@ -1197,6 +1197,17 @@ body {
   font-size: 24px;
   font-weight: 900;
 }
+.friend-showcase-mark--image {
+  padding: 0;
+  overflow: hidden;
+  background: rgba(255,255,255,0.22);
+}
+.friend-showcase-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 .project-showcase-meta,
 .friend-showcase-body {
   display: flex;

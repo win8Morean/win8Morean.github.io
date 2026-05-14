@@ -1152,7 +1152,8 @@ async function hydrateHomePanels() {
     document.title = '友链 | w1n8';
 
     const friends = [
-      { name: '青岑靶场', desc: 'CTF 在线练习平台', avatar: '🎯', url: 'https://ctf.qingcen.net/' }
+      { name: '青岑靶场', desc: 'CTF 在线练习平台', avatar: '🎯', url: 'https://ctf.qingcen.net/' },
+      { name: 'tooki', desc: 'Pwn 大手子的技术角落', avatar: '', image: 'images/tooki.jpg', url: 'https://tooki-blog.vercel.app/' }
     ];
 
     contentInner.innerHTML =
@@ -1171,7 +1172,11 @@ async function hydrateHomePanels() {
       '<div class="friends-showcase">' +
         friends.map(f => '' +
           '<a href="' + f.url + '" target="_blank" rel="noopener" class="friend-showcase-card">' +
-            '<div class="friend-showcase-mark">' + f.avatar + '</div>' +
+            '<div class="friend-showcase-mark' + (f.image ? ' friend-showcase-mark--image' : '') + '">' +
+              (f.image
+                ? '<img src="' + f.image + '" alt="' + f.name + ' avatar" class="friend-showcase-photo">'
+                : f.avatar) +
+            '</div>' +
             '<div class="friend-showcase-body">' +
               '<span class="friend-showcase-kicker">FRIEND LINK</span>' +
               '<h3 class="friend-showcase-title">' + f.name + '</h3>' +
