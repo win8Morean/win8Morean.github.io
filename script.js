@@ -107,6 +107,336 @@ const chatterFiles = [
   'chatters/2026-05-12.md'
 ];
 
+const chatterList = [
+  { title: '博客上线记录', date: '2026-05-12', filename: '2026-05-12.md', path: 'chatters/2026-05-12.md' }
+];
+
+const photoAlbum = {
+  title: '败犬',
+  subtitle: '点击查看相册',
+  photos: [
+    { src: 'images/Yanami_1.JPG',  label: '' },
+    { src: 'images/Yanami_2.PNG',  label: '' },
+    { src: 'images/Yanami_3.PNG',  label: '' },
+    { src: 'images/Yanami_4.JPG',  label: '' },
+    { src: 'images/Yanami_5.JPG',  label: '' },
+    { src: 'images/Yanami_6.JPG',  label: '' },
+    { src: 'images/Yanami_7.JPG',  label: '' },
+    { src: 'images/Yanami_8.JPG',  label: '' },
+    { src: 'images/bg1.jpg',       label: '' },
+    { src: 'images/bg2.jpg',       label: '' },
+    { src: 'images/bg3.jpg',       label: '' },
+    { src: 'images/bg4.jpg',       label: '' },
+    { src: 'images/bg5.jpg',       label: '' },
+    { src: 'images/bg6.jpg',       label: '' }
+  ]
+};
+
+const siteStartDate = '2026-05-12T00:00:00';
+
+let homeMomentsCache = [];
+
+const navSearchPages = [
+  { type: 'page', title: '首页', meta: 'HOME', action: 'home', keywords: ['首页', 'home', '主页'] },
+  { type: 'page', title: '项目', meta: 'PROJECTS', action: 'projects', keywords: ['项目', 'project', 'projects', '学习'] },
+  { type: 'page', title: '归档', meta: 'ARCHIVE', action: 'writeups', keywords: ['归档', '文章', 'writeup', 'writeups', 'archive'] },
+  { type: 'page', title: '照片墙', meta: 'PHOTOS', action: 'photos', keywords: ['照片', '相册', 'photos', 'photo'] },
+  { type: 'page', title: '音乐', meta: 'MUSIC', action: 'music', keywords: ['音乐', 'music', '歌'] },
+  { type: 'page', title: '说说', meta: 'MOMENTS', action: 'moments', keywords: ['说说', 'moments', '动态'] },
+  { type: 'page', title: '杂谈', meta: 'CHATTER', action: 'chatter', keywords: ['杂谈', 'chatter', '博客'] },
+  { type: 'page', title: '友链', meta: 'FRIENDS', action: 'friends', keywords: ['友链', 'friends'] },
+  { type: 'page', title: '关于', meta: 'ABOUT', action: 'about', keywords: ['关于', 'about', '我'] }
+];
+
+function stripMarkdown(md) {
+  return (md || '')
+    .replace(/^---[\s\S]*?---\s*/m, '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^>\s?/gm, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/[*_~>-]/g, ' ')
+    .replace(/\r?\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseFrontmatterBlock(md) {
+  const result = { title: '', date: '', time: '', tags: [], mood: '', content: md };
+  const match = md.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n([\s\S]*)$/);
+  if (!match) return result;
+
+  const fm = match[1];
+  result.content = match[2] || md;
+
+  let collectingTags = false;
+
+  fm.split('\n').forEach(line => {
+    var tagItem = line.match(/^\s+-\s+(.+)$/);
+    if (collectingTags && tagItem) {
+      result.tags.push(tagItem[1].trim().replace(/['"]/g, ''));
+      return;
+    }
+    collectingTags = false;
+
+    var kv = line.match(/^(\w+):\s*(.*)$/);
+    if (!kv) return;
+    var key = kv[1].trim();
+    var val = kv[2].trim();
+
+    if (key === 'tags') {
+      if (val) {
+        result.tags = val.replace(/[\[\]]/g, '').split(',').map(function(t) { return t.trim().replace(/['"]/g, ''); }).filter(Boolean);
+      } else {
+        collectingTags = true;
+      }
+    } else if (key === 'title') {
+      result.title = val.replace(/['"]/g, '');
+    } else if (key === 'date') {
+      result.date = val;
+    } else if (key === 'time') {
+      result.time = val;
+    } else if (key === 'mood') {
+      result.mood = val;
+    }
+  });
+
+  if (!result.title) {
+    var h1 = result.content.match(/^#\s+(.+)$/m);
+    if (h1) result.title = h1[1].trim();
+  }
+
+  return result;
+}
+
+function getRelativeTimeText(dateString) {
+  if (!dateString) return '等待更新';
+  var target = new Date(dateString);
+  if (isNaN(target.getTime())) return dateString;
+
+  var diff = Date.now() - target.getTime();
+  var minute = 60 * 1000;
+  var hour = 60 * minute;
+  var day = 24 * hour;
+
+  if (diff < hour) return Math.max(1, Math.floor(diff / minute)) + ' 分钟前';
+  if (diff < day) return Math.floor(diff / hour) + ' 小时前';
+  if (diff < day * 30) return Math.floor(diff / day) + ' 天前';
+
+  var y = target.getFullYear();
+  var m = String(target.getMonth() + 1).padStart(2, '0');
+  var d = String(target.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+
+function getSiteUptimeText() {
+  var start = new Date(siteStartDate);
+  if (isNaN(start.getTime())) return '0 天';
+  var diff = Date.now() - start.getTime();
+  if (diff < 0) diff = 0;
+  var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  var hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  return days + ' 天 ' + hours + ' 小时';
+}
+
+async function loadHomeMoments() {
+  if (homeMomentsCache.length) return homeMomentsCache;
+
+  const moments = [];
+  for (var i = 0; i < chatterFiles.length; i++) {
+    var file = chatterFiles[i];
+    try {
+      var url = file + '?t=' + Date.now();
+      var res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var md = await res.text();
+      var fm = parseFrontmatterBlock(md);
+      moments.push({
+        filename: file,
+        title: fm.title || '无标题说说',
+        date: fm.date || '',
+        time: fm.time || '',
+        tags: fm.tags || [],
+        content: fm.content || md
+      });
+    } catch (err) {
+      console.warn('home moment load failed: ' + file, err);
+    }
+  }
+
+  moments.sort(function(a, b) {
+    var da = (a.date || '') + (a.time || '00:00');
+    var db = (b.date || '') + (b.time || '00:00');
+    if (da > db) return -1;
+    if (da < db) return 1;
+    return 0;
+  });
+
+  homeMomentsCache = moments;
+  return moments;
+}
+
+async function buildSearchIndex() {
+  var entries = navSearchPages.map(function(item) {
+    return {
+      type: item.type,
+      title: item.title,
+      meta: item.meta,
+      action: item.action,
+      keywords: item.keywords.join(' ')
+    };
+  });
+
+  postList.forEach(function(post, index) {
+    entries.push({
+      type: 'post',
+      title: post.title || '未命名文章',
+      meta: '文章 · ' + (post.date || ''),
+      open: function() { window._openWriteupArticle(index); },
+      keywords: [post.title, post.date, '文章', '归档', 'writeup'].join(' ')
+    });
+  });
+
+  chatterList.forEach(function(post) {
+    entries.push({
+      type: 'chatter',
+      title: post.title || '杂谈记录',
+      meta: '杂谈 · ' + (post.date || ''),
+      open: function() { window._openChatterFile(post.path, post.title, post.date); },
+      keywords: [post.title, post.date, '杂谈', 'chatter', '博客'].join(' ')
+    });
+  });
+
+  try {
+    var moments = await loadHomeMoments();
+    moments.slice(0, 8).forEach(function(moment) {
+      entries.push({
+        type: 'moment',
+        title: moment.title || stripMarkdown(moment.content).slice(0, 16) || '说说',
+        meta: '说说 · ' + (moment.date || ''),
+        action: 'moments',
+        keywords: [moment.title, moment.date, (moment.tags || []).join(' '), stripMarkdown(moment.content).slice(0, 80), '说说'].join(' ')
+      });
+    });
+  } catch (err) {}
+
+  return entries;
+}
+
+async function hydrateHomePanels() {
+  var writeupTitleEl = document.getElementById('featuredWriteupTitle');
+  if (!writeupTitleEl) return;
+
+  var writeupMetaEl = document.getElementById('featuredWriteupMeta');
+  var writeupDescEl = document.getElementById('featuredWriteupDesc');
+  var momentTitleEl = document.getElementById('featuredMomentTitle');
+  var momentMetaEl = document.getElementById('featuredMomentMeta');
+  var momentDescEl = document.getElementById('featuredMomentDesc');
+  var albumTitleEl = document.getElementById('homeAlbumTitle');
+  var albumMetaEl = document.getElementById('homeAlbumMeta');
+  var thumbsEl = document.getElementById('homeGalleryThumbs');
+
+  var postCountEl = document.getElementById('homePostCount');
+  var momentCountEl = document.getElementById('homeMomentCount');
+  var photoCountEl = document.getElementById('homePhotoCount');
+  var lastUpdateEl = document.getElementById('homeLastUpdate');
+  var uptimeEl = document.getElementById('homeUptime');
+  var runtimeEl = document.getElementById('bentoRuntime');
+  var pvInlineEl = document.getElementById('homePvInline');
+
+  var latestPost = postList[0];
+  if (latestPost) {
+    writeupTitleEl.textContent = latestPost.title || '未命名文章';
+    writeupMetaEl.textContent = getRelativeTimeText(latestPost.date);
+    writeupDescEl.textContent = '最近一篇归档文章已就位，点进来继续往下看。';
+  } else {
+    writeupTitleEl.textContent = '暂无文章';
+    writeupMetaEl.textContent = '等待第一篇发布';
+    writeupDescEl.textContent = '写完第一篇之后，这里会自动展示最近更新。';
+  }
+
+  albumTitleEl.textContent = photoAlbum.title;
+  albumMetaEl.textContent = '共 ' + photoAlbum.photos.length + ' 张，' + photoAlbum.subtitle;
+  thumbsEl.innerHTML = photoAlbum.photos.slice(0, 3).map(function(photo) {
+    return '<img src="' + photo.src + '" alt="" loading="lazy">';
+  }).join('');
+
+  postCountEl.textContent = String(postList.length);
+  photoCountEl.textContent = String(photoAlbum.photos.length);
+  uptimeEl.textContent = getSiteUptimeText();
+  if (runtimeEl) runtimeEl.textContent = 'UP ' + getSiteUptimeText();
+
+  var latestDates = [];
+  if (latestPost && latestPost.date) latestDates.push(latestPost.date);
+
+  try {
+    var moments = await loadHomeMoments();
+    momentCountEl.textContent = String(moments.length);
+
+    if (moments[0]) {
+      var latestMoment = moments[0];
+      var momentDatetime = latestMoment.date + (latestMoment.time ? 'T' + latestMoment.time : '');
+      if (latestMoment.date) latestDates.push(momentDatetime);
+
+      momentTitleEl.textContent = latestMoment.title || '最新说说';
+      momentMetaEl.textContent = getRelativeTimeText(momentDatetime || latestMoment.date);
+      momentDescEl.textContent = stripMarkdown(latestMoment.content).slice(0, 72) || '最近的想法会显示在这里。';
+    } else {
+      momentTitleEl.textContent = '暂无说说';
+      momentMetaEl.textContent = '等待下一条记录';
+      momentDescEl.textContent = '发布新的 chatter 后，这里会自动出现摘要。';
+    }
+  } catch (err) {
+    momentCountEl.textContent = '0';
+    momentTitleEl.textContent = '说说读取失败';
+    momentMetaEl.textContent = '请检查 chatters 目录';
+    momentDescEl.textContent = '当前无法读取碎片记录，但其他页面不受影响。';
+  }
+
+  if (latestDates.length) {
+    latestDates.sort(function(a, b) {
+      return new Date(b).getTime() - new Date(a).getTime();
+    });
+    lastUpdateEl.textContent = getRelativeTimeText(latestDates[0]);
+  } else {
+    lastUpdateEl.textContent = '等待同步';
+  }
+
+  if (pvInlineEl) {
+    var syncPv = function() {
+      var pv = document.getElementById('busuanzi_value_site_pv');
+      if (pv && pv.textContent && pv.textContent !== '--') {
+        pvInlineEl.textContent = pv.textContent + ' visits';
+      }
+    };
+    syncPv();
+    setTimeout(syncPv, 1200);
+    setTimeout(syncPv, 4000);
+  }
+
+  var featuredWriteupCard = document.getElementById('featuredWriteupCard');
+  var featuredMomentCard = document.getElementById('featuredMomentCard');
+  var homeGalleryLink = document.getElementById('homeGalleryLink');
+
+  if (featuredWriteupCard) {
+    featuredWriteupCard.onclick = function() {
+      if (postList.length > 0 && typeof window._openWriteupArticle === 'function') return window._openWriteupArticle(0);
+    };
+  }
+  if (featuredMomentCard) {
+    featuredMomentCard.onclick = function() {
+      if (typeof window.renderMoments === 'function') window.renderMoments();
+    };
+  }
+  if (homeGalleryLink) {
+    homeGalleryLink.onclick = function() {
+      if (typeof window.renderPhotoAlbum === 'function') window.renderPhotoAlbum();
+    };
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SPA Router — 9 Sections
    ═══════════════════════════════════════════════════════════════ */
@@ -226,7 +556,10 @@ const chatterFiles = [
   /* ═══════════════════════════════════════════
      1. Home
      ═══════════════════════════════════════════ */
-  function renderHome() { showHome(); }
+  function renderHome() {
+    showHome();
+    hydrateHomePanels();
+  }
 
   /* ═══════════════════════════════════════════
      2. Projects (Lab)
@@ -250,29 +583,39 @@ const chatterFiles = [
 
     contentInner.innerHTML =
       sectionHTML('PROJECTS MATRIX', '项目矩阵') +
-      '<div class="projects-grid">' +
+      '<div class="showcase-hero showcase-hero--projects">' +
+        '<div class="showcase-hero-main">' +
+          '<span class="archive-kicker">Build Notes</span>' +
+          '<h3 class="showcase-hero-title">正在长期打磨的项目与实验场</h3>' +
+          '<p class="showcase-hero-desc">不只是展示链接，而是把每个项目当成一个持续更新的作品模块。</p>' +
+        '</div>' +
+        '<div class="showcase-stat-strip">' +
+          '<div class="showcase-stat-card"><strong>' + projects.length + '</strong><span>PROJECTS</span></div>' +
+          '<div class="showcase-stat-card"><strong>' + projects[0].tags.length + '</strong><span>STACK TAGS</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="projects-showcase">' +
         projects.map(function(p) {
           return '' +
-            '<div class="project-card">' +
-              '<div class="project-icon">' + p.icon + '</div>' +
-              '<div class="project-name">' + p.name + '</div>' +
-              '<div class="project-desc">' + p.desc + '</div>' +
-              '<div class="project-tags">' +
+            '<article class="project-showcase-card">' +
+              '<div class="project-showcase-head">' +
+                '<div class="project-showcase-mark">' + p.icon + '</div>' +
+                '<div class="project-showcase-meta">' +
+                  '<span class="project-showcase-kicker">FLAGSHIP</span>' +
+                  '<h3 class="project-showcase-title">' + p.name + '</h3>' +
+                '</div>' +
+              '</div>' +
+              '<p class="project-showcase-desc">' + p.desc + '</p>' +
+              '<div class="project-showcase-tags">' +
                 p.tags.map(function(t) {
-                  return '<span class="project-tag">' + t + '</span>';
+                  return '<span class="project-showcase-tag">' + t + '</span>';
                 }).join('') +
               '</div>' +
-              '<div class="project-links">' +
-                '<a class="project-btn project-btn--primary" href="' + p.liveUrl + '" target="_blank" rel="noopener">' +
-                  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-                  '在线预览' +
-                '</a>' +
-                '<a class="project-btn" href="' + p.repoUrl + '" target="_blank" rel="noopener">' +
-                  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>' +
-                  'GitHub' +
-                '</a>' +
+              '<div class="project-showcase-actions">' +
+                '<a class="project-showcase-btn project-showcase-btn--primary" href="' + p.liveUrl + '" target="_blank" rel="noopener">在线预览</a>' +
+                '<a class="project-showcase-btn" href="' + p.repoUrl + '" target="_blank" rel="noopener">查看源码</a>' +
               '</div>' +
-            '</div>';
+            '</article>';
         }).join('') +
       '</div>';
   }
@@ -285,45 +628,84 @@ const chatterFiles = [
     currentView = 'writeups';
     updateActiveNav('writeups');
     document.title = '归档 | w1n8';
-
-    const categories = ['全部', 'CTF Writeups', '渗透测试', '漏洞复现'];
+    var total = postList.length;
+    var latest = total > 0 ? postList[0] : null;
 
     contentInner.innerHTML =
       sectionHTML('归档', 'ARCHIVE — 技术沉淀') +
-      '<div class="archive-filters">' +
-        categories.map((cat, i) =>
-          '<button class="archive-pill' + (i === 0 ? ' active' : '') + '">' + cat + '</button>'
-        ).join('') +
+      '<div class="archive-hero">' +
+        '<div class="archive-hero-main">' +
+          '<span class="archive-kicker">Latest Dispatch</span>' +
+          '<h3 class="archive-hero-title">' + (latest ? latest.title : '还没有归档内容') + '</h3>' +
+          '<p class="archive-hero-desc">' + (latest ? '最近的一篇文章已经整理进归档，点开继续看下去。' : '第一篇文章发布后，这里会成为你的内容中枢。') + '</p>' +
+          '<div class="archive-hero-meta">' +
+            '<span>总计 ' + total + ' 篇</span>' +
+            '<span>' + (latest ? latest.date : '等待更新') + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="archive-hero-side">' +
+          '<div class="archive-side-card">' +
+            '<span class="archive-side-num">' + total + '</span>' +
+            '<span class="archive-side-label">ARTICLES</span>' +
+          '</div>' +
+          '<div class="archive-side-card">' +
+            '<span class="archive-side-num">' + (latest ? getRelativeTimeText(latest.date) : '--') + '</span>' +
+            '<span class="archive-side-label">LAST UPDATE</span>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
-      '<div class="archive-empty">暂无归档内容</div>';
-
-    contentInner.querySelectorAll('.archive-pill').forEach(pill => {
-      pill.addEventListener('click', () => {
-        contentInner.querySelectorAll('.archive-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-      });
-    });
+      (
+        total === 0
+          ? '<div class="archive-empty">暂无归档内容</div>'
+          : '<div class="archive-stream">' +
+              postList.map(function(post, index) {
+                return '' +
+                  '<button class="archive-entry" type="button" onclick="window._openWriteupArticle(' + index + ')">' +
+                    '<div class="archive-entry-date">' + (post.date || '--') + '</div>' +
+                    '<div class="archive-entry-body">' +
+                      '<h3 class="archive-entry-title">' + post.title + '</h3>' +
+                      '<p class="archive-entry-desc">点击进入文章正文，继续阅读这篇归档内容。</p>' +
+                    '</div>' +
+                    '<div class="archive-entry-arrow">↗</div>' +
+                  '</button>';
+              }).join('') +
+            '</div>'
+      );
   }
 
   /* ── Article Reader (shared by Writeups & Chatter) ── */
   async function openArticle(index, source) {
-    const post = postList[index];
-    const basePath = 'posts/';
+    const isChatter = source === 'chatter';
+    const post = isChatter ? chatterList[index] : postList[index];
+    const basePath = isChatter ? 'chatters/' : 'posts/';
+    const filename = isChatter
+      ? (post.path ? post.path.split('/').pop() : post.filename)
+      : post.filename;
+    const sectionName = isChatter ? '云端杂谈' : '归档文章';
 
-    articlePath.textContent = '~/' + source + '/' + post.filename;
-    articleBody.innerHTML = '<div class="article-loading">Loading ' + post.filename + ' ...</div>';
+    articlePath.textContent = '~/' + source + '/' + filename;
+    articleBody.innerHTML = '<div class="article-loading">Loading ' + filename + ' ...</div>';
     currentWriteupIndex = index;
     showArticle();
 
     try {
-      const res = await fetch(basePath + post.filename);
+      const res = await fetch(isChatter && post.path ? post.path : (basePath + filename));
       if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
       const md = await res.text();
       const html = marked.parse(md);
 
       const articleDiv = document.createElement('div');
       articleDiv.className = 'article-content';
-      articleDiv.innerHTML = html;
+      articleDiv.innerHTML =
+        '<div class="article-lead">' +
+          '<span class="article-kicker">' + sectionName + '</span>' +
+          '<h1 class="article-cover-title">' + (post.title || '未命名文章') + '</h1>' +
+          '<div class="article-cover-meta">' +
+            '<span>' + (post.date || '--') + '</span>' +
+            '<span>' + filename + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="article-prose">' + html + '</div>';
 
       /* Giscus comment system */
       const giscusWrap = document.createElement('div');
@@ -341,7 +723,7 @@ const chatterFiles = [
     } catch (err) {
       articleBody.innerHTML = '' +
         '<div class="post-list-empty">' +
-          '加载失败: ' + post.filename + '<br>' +
+          '加载失败: ' + filename + '<br>' +
           '<span style="font-size:12px;color:var(--slate-500)">' + err.message + '</span>' +
         '</div>';
     }
@@ -366,11 +748,11 @@ const chatterFiles = [
       sectionHTML('光影画廊', 'PHOTOS — 一些值得记录的瞬间') +
       '<div class="photo-album-card" onclick="renderPhotoAlbum()">' +
         '<div class="photo-stack-wrap">' +
-          '<img src="images/tomori.jpg" alt="败犬">' +
-          '<img src="images/Yanami_4.JPG" alt="败犬">' +
+          '<img src="' + photoAlbum.photos[0].src + '" alt="' + photoAlbum.title + '">' +
+          '<img src="' + photoAlbum.photos[3].src + '" alt="' + photoAlbum.title + '">' +
         '</div>' +
-        '<div class="photo-album-name">败犬</div>' +
-        '<div class="photo-album-count">点击查看相册</div>' +
+        '<div class="photo-album-name">' + photoAlbum.title + '</div>' +
+        '<div class="photo-album-count">共 ' + photoAlbum.photos.length + ' 张 · 点击查看相册</div>' +
       '</div>' +
       '<p style="text-align:center;margin-top:24px;color:var(--slate-500);font-size:13px;font-family:var(--font-serif)">' +
         '更多照片即将更新...' +
@@ -382,25 +764,7 @@ const chatterFiles = [
     showPage();
     currentView = 'photos';
     updateActiveNav('photos');
-    document.title = '败犬 | w1n8';
-
-    const photos = [
-      { src: 'images/Yanami_1.JPG',  label: '' },
-      { src: 'images/Yanami_2.PNG',  label: '' },
-      { src: 'images/Yanami_3.PNG',  label: '' },
-      { src: 'images/Yanami_4.JPG',  label: '' },
-      { src: 'images/Yanami_5.JPG',  label: '' },
-      { src: 'images/Yanami_6.JPG',  label: '' },
-      { src: 'images/Yanami_7.JPG',  label: '' },
-      { src: 'images/Yanami_8.JPG',  label: '' },
-      { src: 'images/Yanami.webp',   label: '' },
-      { src: 'images/bg1.jpg',       label: '' },
-      { src: 'images/bg2.jpg',       label: '' },
-      { src: 'images/bg3.jpg',       label: '' },
-      { src: 'images/bg4.jpg',       label: '' },
-      { src: 'images/bg5.jpg',       label: '' },
-      { src: 'images/bg6.jpg',       label: '' },
-    ];
+    document.title = photoAlbum.title + ' | w1n8';
 
     contentInner.innerHTML =
       '<div class="album-detail-header">' +
@@ -409,12 +773,12 @@ const chatterFiles = [
           '<span>返回相册</span>' +
         '</button>' +
         '<div class="album-detail-info">' +
-          '<span class="album-detail-name">败犬</span>' +
-          '<span class="album-detail-count">共 ' + photos.length + ' 张</span>' +
+          '<span class="album-detail-name">' + photoAlbum.title + '</span>' +
+          '<span class="album-detail-count">共 ' + photoAlbum.photos.length + ' 张</span>' +
         '</div>' +
       '</div>' +
       '<div class="photos-grid">' +
-        photos.map(p => '' +
+        photoAlbum.photos.map(p => '' +
           '<div class="photo-item">' +
             '<img src="' + p.src + '" alt="" loading="lazy" onerror="this.parentElement.style.display=\'none\'">' +
           '</div>'
@@ -428,6 +792,10 @@ const chatterFiles = [
   }
 
   window.renderPhotoAlbum = renderPhotoAlbum;
+  window.renderMoments = renderMoments;
+  window._openWriteupArticle = function(index) {
+    openArticle(index, 'writeups');
+  };
 
   /* ═══════════════════════════════════════════
      5. Music — embedded BGM player page
@@ -621,10 +989,19 @@ const chatterFiles = [
 
     contentInner.innerHTML =
       sectionHTML('说说', 'MOMENTS — 碎片化记录') +
-      '<div class="moments-list" id="momentsList">' +
+      '<div class="moments-shell">' +
+        '<div class="moments-shell-head">' +
+          '<div class="moments-shell-copy">' +
+            '<span class="archive-kicker">Live Fragments</span>' +
+            '<h3 class="moments-shell-title">最近的想法和碎片</h3>' +
+            '<p class="moments-shell-desc">更轻、更短，也更接近当下的状态记录。</p>' +
+          '</div>' +
+        '</div>' +
+        '<div class="moments-list" id="momentsList">' +
         '<div class="moments-loading">' +
           '<div class="moments-loading-spin"></div>' +
           '<p>加载说说中...</p>' +
+        '</div>' +
         '</div>' +
       '</div>';
 
@@ -673,7 +1050,7 @@ const chatterFiles = [
       return;
     }
 
-    container.innerHTML = moments.map(function(m) {
+    container.innerHTML = moments.map(function(m, index) {
       var dateDisplay = m.date;
       if (m.time) dateDisplay += ' ' + m.time;
 
@@ -695,6 +1072,10 @@ const chatterFiles = [
 
       return '' +
         '<div class="moment-card">' +
+          '<div class="moment-rail">' +
+            '<span class="moment-rail-dot"></span>' +
+            '<span class="moment-rail-line' + (index === moments.length - 1 ? ' is-last' : '') + '"></span>' +
+          '</div>' +
           '<div class="moment-header">' +
             '<div class="moment-avatar">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
@@ -720,21 +1101,29 @@ const chatterFiles = [
     updateActiveNav('chatter');
     document.title = '杂谈 | w1n8';
 
-    let html = sectionHTML('云端杂谈', 'CHATTER — 共 ' + postList.length + ' 篇文章');
+    let html = sectionHTML('云端杂谈', 'CHATTER — 共 ' + chatterList.length + ' 篇文章');
 
-    if (postList.length === 0) {
+    if (chatterList.length === 0) {
       html += '<div class="post-list-empty">还没有文章，敬请期待。</div>';
     } else {
-      html += '<ul class="post-list">';
-      postList.forEach((post, index) => {
-        html += '' +
-          '<li onclick="window._openChatterArticle(' + index + ')">' +
-            '<span class="post-date">' + post.date + '</span>' +
-            '<span class="post-glyph">›</span>' +
-            '<span class="post-title">' + post.title + '</span>' +
-          '</li>';
-      });
-      html += '</ul>';
+      html +=
+        '<div class="chatter-board">' +
+          chatterList.map(function(post, index) {
+            return '' +
+              '<button class="chatter-note" type="button" onclick="window._openChatterArticle(' + index + ')">' +
+                '<div class="chatter-note-head">' +
+                  '<span class="chatter-note-date">' + (post.date || '--') + '</span>' +
+                  '<span class="chatter-note-badge">NOTE</span>' +
+                '</div>' +
+                '<h3 class="chatter-note-title">' + post.title + '</h3>' +
+                '<p class="chatter-note-desc">从云端摘下一张记录卡，点开继续阅读完整内容。</p>' +
+                '<div class="chatter-note-foot">' +
+                  '<span class="chatter-note-cta">进入阅读</span>' +
+                  '<span class="chatter-note-arrow">→</span>' +
+                '</div>' +
+              '</button>';
+          }).join('') +
+        '</div>';
     }
 
     contentInner.innerHTML = html;
@@ -743,54 +1132,14 @@ const chatterFiles = [
   window._openChatterArticle = function(index) {
     openArticle(index, 'chatter');
   };
+  window._openChatterFile = function(path, title, date) {
+    var idx = chatterList.findIndex(function(item) { return item.path === path; });
+    if (idx >= 0) return openArticle(idx, 'chatter');
+  };
 
   /* ── Simple frontmatter parser ── */
   function parseFrontmatter(md) {
-    const result = { title: '', date: '', time: '', tags: [], mood: '', content: md };
-    const match = md.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n([\s\S]*)$/);
-    if (!match) return result;
-
-    const fm = match[1];
-    result.content = match[2] || md;
-
-    let collectingTags = false;
-
-    fm.split('\n').forEach(line => {
-      var tagItem = line.match(/^\s+-\s+(.+)$/);
-      if (collectingTags && tagItem) {
-        result.tags.push(tagItem[1].trim().replace(/['"]/g, ''));
-        return;
-      }
-      collectingTags = false;
-
-      var kv = line.match(/^(\w+):\s*(.*)$/);
-      if (!kv) return;
-      var key = kv[1].trim();
-      var val = kv[2].trim();
-
-      if (key === 'tags') {
-        if (val) {
-          result.tags = val.replace(/[\[\]]/g, '').split(',').map(function(t) { return t.trim().replace(/['"]/g, ''); }).filter(Boolean);
-        } else {
-          collectingTags = true;
-        }
-      } else if (key === 'title') {
-        result.title = val.replace(/['"]/g, '');
-      } else if (key === 'date') {
-        result.date = val;
-      } else if (key === 'time') {
-        result.time = val;
-      } else if (key === 'mood') {
-        result.mood = val;
-      }
-    });
-
-    if (!result.title) {
-      var h1 = result.content.match(/^#\s+(.+)$/m);
-      if (h1) result.title = h1[1].trim();
-    }
-
-    return result;
+    return parseFrontmatterBlock(md);
   }
 
   /* ═══════════════════════════════════════════
@@ -808,21 +1157,31 @@ const chatterFiles = [
 
     contentInner.innerHTML =
       sectionHTML('友链', 'FRIENDS — 伙伴们的角落') +
-      '<div class="friends-grid">' +
+      '<div class="showcase-hero showcase-hero--friends">' +
+        '<div class="showcase-hero-main">' +
+          '<span class="archive-kicker">Companions</span>' +
+          '<h3 class="showcase-hero-title">一起折腾、一起记录的站点角落</h3>' +
+          '<p class="showcase-hero-desc">把友链页也做成一面内容展板，让每个链接都更像一个独立小宇宙。</p>' +
+        '</div>' +
+        '<div class="showcase-stat-strip">' +
+          '<div class="showcase-stat-card"><strong>' + friends.length + '</strong><span>FRIENDS</span></div>' +
+          '<div class="showcase-stat-card"><strong>OPEN</strong><span>APPLY</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="friends-showcase">' +
         friends.map(f => '' +
-          '<a href="' + f.url + '" target="_blank" rel="noopener" class="friend-card">' +
-            '<div class="friend-avatar">' + f.avatar + '</div>' +
-            '<div class="friend-info">' +
-              '<div class="friend-name">' + f.name + '</div>' +
-              '<div class="friend-desc">' + f.desc + '</div>' +
+          '<a href="' + f.url + '" target="_blank" rel="noopener" class="friend-showcase-card">' +
+            '<div class="friend-showcase-mark">' + f.avatar + '</div>' +
+            '<div class="friend-showcase-body">' +
+              '<span class="friend-showcase-kicker">FRIEND LINK</span>' +
+              '<h3 class="friend-showcase-title">' + f.name + '</h3>' +
+              '<p class="friend-showcase-desc">' + f.desc + '</p>' +
             '</div>' +
-            '<span class="friend-arrow">→</span>' +
+            '<span class="friend-showcase-arrow">↗</span>' +
           '</a>'
         ).join('') +
       '</div>' +
-      '<p style="text-align:center;margin-top:24px;color:var(--slate-500);font-size:13px;font-family:var(--font-serif)">' +
-        '🍻 友链位招租中（V 我 50 详谈）' +
-      '</p>';
+      '<div class="friends-cta-note">🍻 友链位招租中，欢迎来交换各自的角落。</div>';
   }
 
   /* ═══════════════════════════════════════════
@@ -1017,6 +1376,8 @@ const chatterFiles = [
     e.preventDefault();
     renderHome();
   });
+
+  hydrateHomePanels();
 })();
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1141,6 +1502,8 @@ const chatterFiles = [
    ═══════════════════════════════════════════════════════════════ */
 (() => {
   const clockEl = document.getElementById('bentoClock');
+  const runtimeEl = document.getElementById('bentoRuntime');
+  const uptimeEl = document.getElementById('homeUptime');
   if (!clockEl) return;
 
   function tick() {
@@ -1149,6 +1512,9 @@ const chatterFiles = [
     const m = String(now.getMinutes()).padStart(2, '0');
     const s = String(now.getSeconds()).padStart(2, '0');
     clockEl.textContent = h + ':' + m + ':' + s;
+    const uptimeText = getSiteUptimeText();
+    if (runtimeEl) runtimeEl.textContent = 'UP ' + uptimeText;
+    if (uptimeEl) uptimeEl.textContent = uptimeText;
   }
   tick();
   setInterval(tick, 1000);
@@ -1403,14 +1769,14 @@ function showQRCode(type) {
     isOpen = true;
     backdrop.classList.add('open');
     menu.classList.add('open');
-    fab.style.transform = 'scale(0)';
+    fab.classList.add('is-hidden');
   }
 
   function closeMenu() {
     isOpen = false;
     backdrop.classList.remove('open');
     menu.classList.remove('open');
-    fab.style.transform = 'scale(1)';
+    fab.classList.remove('is-hidden');
   }
 
   fab.addEventListener('click', function(e) {
@@ -1446,3 +1812,320 @@ function showQRCode(type) {
   if (activeItem) activeItem.classList.add('active');
 })();
 
+/* ═══════════════════════════════════════════
+   Yanami Assistant Widget
+   ═══════════════════════════════════════════ */
+(function() {
+  var widget = document.getElementById('assistantWidget');
+  var avatarBtn = document.getElementById('assistantAvatarBtn');
+  var avatar = document.getElementById('assistantAvatar');
+  var bubble = document.getElementById('assistantBubble');
+  if (!widget || !avatarBtn || !avatar || !bubble) return;
+
+  var states = {
+    idle: {
+      src: 'images/yanami-assistant/idle.png',
+      lines: ['你来啦，我还以为你今天不点我呢。', '先说好，我只是刚好也在这里而已。', '想去哪一页？我、我可以陪你看看。']
+    },
+    thanks: {
+      src: 'images/yanami-assistant/thanks.png',
+      lines: ['欸，突然这么认真地谢我，我会不好意思的。', '这样就对了嘛，至少你还记得我。', '哼，也不算白陪你待在这里。']
+    },
+    morning: {
+      src: 'images/yanami-assistant/morning.png',
+      lines: ['早安。今天别一上来就发呆哦。', '新的一天开始了，你应该会比昨天更有干劲吧？']
+    },
+    night: {
+      src: 'images/yanami-assistant/night.png',
+      lines: ['晚安。再熬下去的话，我可不会陪你一起困。', '差不多就去睡吧，明天再继续也来得及。']
+    },
+    sleepy: {
+      src: 'images/yanami-assistant/sleepy.png',
+      lines: ['你也太安静了吧，我都快睡着了。', '要是暂时没事，我先打个盹……就一小会儿。']
+    },
+    confused: {
+      src: 'images/yanami-assistant/confused.png',
+      lines: ['诶？你这一步是不是跳太快了。', '等等，我没跟上……你再点一次给我看看。']
+    },
+    great: {
+      src: 'images/yanami-assistant/great.png',
+      lines: ['这个不错诶，比我想的还顺利。', '好棒……咳，我是说，做得还挺像样。']
+    },
+    numb: {
+      src: 'images/yanami-assistant/numb.png',
+      lines: ['嗯……我先放空一下，你别催。', '脑子有点转不动了，让我呆一会儿。']
+    },
+    cheer: {
+      src: 'images/yanami-assistant/cheer.png',
+      lines: ['加油啦，我可是在认真给你打气。', '继续冲，我都举手了，你可别掉链子。']
+    }
+  };
+
+  var cycle = ['idle', 'thanks', 'great', 'confused', 'numb', 'sleepy', 'cheer'];
+  var index = 0;
+  var bubbleTimer = null;
+  var idleTimer = null;
+
+  function rand(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function hideBubbleSoon(ms) {
+    if (bubbleTimer) clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(function() {
+      bubble.classList.add('is-hidden');
+    }, ms);
+  }
+
+  function speak(text, duration) {
+    bubble.textContent = text;
+    bubble.classList.remove('is-hidden');
+    hideBubbleSoon(duration || 3400);
+  }
+
+  function setState(name, speakNow) {
+    var state = states[name] || states.idle;
+    avatar.src = state.src;
+    avatar.dataset.state = name;
+    if (speakNow) speak(rand(state.lines));
+  }
+
+  function setTimeAwareDefault() {
+    var hour = new Date().getHours();
+    if (hour >= 6 && hour < 11) setState('morning', true);
+    else if (hour >= 22 || hour < 4) setState('night', true);
+    else setState('idle', true);
+  }
+
+  function bumpCycle() {
+    index = (index + 1) % cycle.length;
+    setState(cycle[index], true);
+  }
+
+  function resetIdleTimer() {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(function() {
+      setState('sleepy', true);
+    }, 45000);
+  }
+
+  avatarBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    bumpCycle();
+    resetIdleTimer();
+  });
+
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) return;
+    resetIdleTimer();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (widget.contains(e.target)) return;
+    resetIdleTimer();
+  }, { passive: true });
+
+  setTimeAwareDefault();
+  resetIdleTimer();
+
+  setInterval(function() {
+    var current = avatar.dataset.state || 'idle';
+    if (current === 'sleepy') return;
+    if (Math.random() < 0.35) {
+      var passiveStates = ['idle', 'numb', 'great', 'confused'];
+      setState(passiveStates[Math.floor(Math.random() * passiveStates.length)], true);
+    }
+  }, 32000);
+})();
+
+/* ═══════════════════════════════════════════
+   Top Nav Search
+   ═══════════════════════════════════════════ */
+(function() {
+  var input = document.getElementById('navSearchInput');
+  var dropdown = document.getElementById('navSearchDropdown');
+  var mobileFab = document.getElementById('mobileFab');
+  if (!input || !dropdown) return;
+
+  var searchIndex = navSearchPages.map(function(item) {
+    return {
+      type: item.type,
+      title: item.title,
+      meta: item.meta,
+      action: item.action,
+      keywords: item.keywords.join(' ')
+    };
+  });
+  var activeResultIndex = -1;
+  var clearDropdownTimer = null;
+  buildSearchIndex().then(function(entries) {
+    searchIndex = entries;
+  });
+
+  function normalize(text) {
+    return (text || '').toLowerCase().trim();
+  }
+
+  function escapeHtml(text) {
+    return String(text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function highlightText(text, query) {
+    var safeText = escapeHtml(text || '');
+    if (!query) return safeText;
+    var safeQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var regex = new RegExp('(' + safeQuery + ')', 'ig');
+    return safeText.replace(regex, '<mark class="nav-search-highlight">$1</mark>');
+  }
+
+  function closeDropdown() {
+    if (clearDropdownTimer) clearTimeout(clearDropdownTimer);
+    dropdown.classList.remove('visible');
+    activeResultIndex = -1;
+    clearDropdownTimer = setTimeout(function() {
+      dropdown.innerHTML = '';
+    }, 180);
+  }
+
+  function openResult(entry) {
+    if (!entry) return;
+    closeDropdown();
+    input.value = '';
+
+    if (typeof entry.open === 'function') {
+      entry.open();
+      return;
+    }
+
+    if (entry.action) {
+      var btn = document.querySelector('[data-action="' + entry.action + '"]');
+      if (btn) btn.click();
+    }
+  }
+
+  function renderResults(results) {
+    if (clearDropdownTimer) clearTimeout(clearDropdownTimer);
+    dropdown.innerHTML = '';
+    activeResultIndex = -1;
+    if (!results.length) {
+      dropdown.innerHTML =
+        '<div class="nav-search-empty">' +
+          '<span class="nav-search-empty-title">没有找到匹配内容。</span>' +
+          '<span class="nav-search-empty-meta">换个关键词试试，或者直接点导航进入页面。</span>' +
+        '</div>';
+      dropdown.classList.add('visible');
+      return;
+    }
+
+    results.slice(0, 6).forEach(function(entry) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'nav-search-result';
+      button.dataset.resultIndex = String(dropdown.children.length);
+      var badge = entry.type === 'page'
+        ? 'PAGE'
+        : (entry.type === 'post'
+          ? 'POST'
+          : (entry.type === 'chatter' ? 'NOTE' : 'MOMENT'));
+      button.innerHTML =
+        '<span class="nav-search-result-top">' +
+          '<span class="nav-search-result-badge">' + badge + '</span>' +
+          '<span class="nav-search-result-meta">' + entry.meta + '</span>' +
+        '</span>' +
+        '<span class="nav-search-result-title">' + highlightText(entry.title, input.value.trim()) + '</span>' +
+        '<span class="nav-search-result-desc">' + (
+          entry.type === 'page'
+            ? '快速跳转到这个页面入口。'
+            : (entry.type === 'post'
+              ? '打开文章正文，继续阅读详细内容。'
+              : (entry.type === 'chatter'
+                ? '进入杂谈正文，继续阅读完整记录。'
+                : '切换到说说页面，查看最近状态记录。'))
+        ) + '</span>';
+      button.addEventListener('click', function() {
+        openResult(entry);
+      });
+      dropdown.appendChild(button);
+    });
+    dropdown.classList.add('visible');
+  }
+
+  function getResultButtons() {
+    return Array.prototype.slice.call(dropdown.querySelectorAll('.nav-search-result'));
+  }
+
+  function syncActiveResult() {
+    var buttons = getResultButtons();
+    buttons.forEach(function(btn, idx) {
+      btn.classList.toggle('is-active', idx === activeResultIndex);
+    });
+  }
+
+  input.addEventListener('input', function() {
+    var q = normalize(input.value);
+    if (!q) {
+      closeDropdown();
+      return;
+    }
+    var results = searchIndex.filter(function(entry) {
+      return normalize(entry.title).includes(q) || normalize(entry.keywords).includes(q);
+    });
+    renderResults(results);
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeDropdown();
+      input.blur();
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      var buttons = getResultButtons();
+      if (!buttons.length) return;
+      activeResultIndex = (activeResultIndex + 1 + buttons.length) % buttons.length;
+      syncActiveResult();
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      var buttonsUp = getResultButtons();
+      if (!buttonsUp.length) return;
+      activeResultIndex = (activeResultIndex - 1 + buttonsUp.length) % buttonsUp.length;
+      syncActiveResult();
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var buttonsEnter = getResultButtons();
+      if (!buttonsEnter.length) return;
+      if (activeResultIndex < 0) activeResultIndex = 0;
+      var target = buttonsEnter[activeResultIndex];
+      if (target) target.click();
+    }
+  });
+
+  input.addEventListener('focus', function() {
+    if (window.innerWidth <= 768 && mobileFab) {
+      mobileFab.classList.add('is-hidden');
+    }
+  });
+
+  input.addEventListener('blur', function() {
+    setTimeout(function() {
+      if (window.innerWidth <= 768 && mobileFab) {
+        mobileFab.classList.remove('is-hidden');
+      }
+    }, 120);
+  });
+
+  document.addEventListener('click', function(e) {
+    if (e.target === input || dropdown.contains(e.target)) return;
+    closeDropdown();
+  });
+})();
