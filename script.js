@@ -96,6 +96,9 @@
    Post List Data (for Writeups)
    ═══════════════════════════════════════════════════════════════ */
 const postList = [
+  { title: 'LitCTF2026 Web WP', date: '2026-05-23', filename: 'LitCTF2026_WEB_WP.md' },
+  { title: 'LitCTF2026 Misc WP', date: '2026-05-23', filename: 'LitCTF2026_MISC_WP.md' },
+  { title: 'LitCTF2026 Crypto WP', date: '2026-05-23', filename: 'LitCTF2026_crypto_WP.md' },
   { title: '5月21日刷题', date: '2026-05-21', filename: '5月21日刷题.md' },
   { title: '第一周学习记录', date: '2025-11-09', filename: 'week_1(November).md' }
 ];
