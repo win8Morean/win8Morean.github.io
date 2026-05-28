@@ -96,11 +96,54 @@
    Post List Data (for Writeups)
    ═══════════════════════════════════════════════════════════════ */
 const postList = [
-  { title: 'LitCTF2026 Web WP', date: '2026-05-23', filename: 'LitCTF2026_WEB_WP.md' },
-  { title: 'LitCTF2026 Misc WP', date: '2026-05-23', filename: 'LitCTF2026_MISC_WP.md' },
-  { title: 'LitCTF2026 Crypto WP', date: '2026-05-23', filename: 'LitCTF2026_crypto_WP.md' },
-  { title: '5月21日刷题', date: '2026-05-21', filename: '5月21日刷题.md' },
-  { title: '第一周学习记录', date: '2025-11-09', filename: 'week_1(November).md' }
+  {
+    title: 'Hack The Box · Misc 两题速记',
+    date: '2026-05-27',
+    filename: 'hackthebox.md',
+    category: 'Practice',
+    tags: ['HTB', 'Misc', 'Automation'],
+    summary: '两道很适合练自动化思路的 Misc 小题，核心都是把重复交互抽象成脚本。'
+  },
+  {
+    title: 'LitCTF 2026 · Web 题解',
+    date: '2026-05-23',
+    filename: 'LitCTF2026_WEB_WP.md',
+    category: 'Web',
+    tags: ['LitCTF', 'Web', 'Writeup'],
+    summary: '从信息泄露点、利用链到复现步骤，整理两道 Web 题的完整解法。'
+  },
+  {
+    title: 'LitCTF 2026 · Misc 题解',
+    date: '2026-05-23',
+    filename: 'LitCTF2026_MISC_WP.md',
+    category: 'Misc',
+    tags: ['LitCTF', 'Misc', 'Writeup'],
+    summary: '覆盖 LSB、二维码修复、SSTV 等题型，适合当作一份 Misc 速查记录。'
+  },
+  {
+    title: 'LitCTF 2026 · Crypto 题解',
+    date: '2026-05-23',
+    filename: 'LitCTF2026_crypto_WP.md',
+    category: 'Crypto',
+    tags: ['LitCTF', 'Crypto', 'Writeup'],
+    summary: '记录 AES 爆破与题目分析过程，把关键脚本和思路留存下来。'
+  },
+  {
+    title: '5 月 21 日刷题记录',
+    date: '2026-05-21',
+    filename: '5月21日刷题.md',
+    category: 'Practice',
+    tags: ['CTF', 'Practice', 'Notes'],
+    summary: '当天刷题过程里的关键步骤、脚本片段和题目切入点整理。'
+  },
+  {
+    title: '第一周学习记录',
+    date: '2025-11-09',
+    filename: 'week_1(November).md',
+    category: 'Journal',
+    tags: ['Weekly', 'Notes', 'Learning'],
+    summary: '一周学习进度、方向选择和后续计划的阶段性记录。'
+  }
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -108,16 +151,18 @@ const postList = [
    新增说说时：把新 md 文件的路径加到这个数组即可。
    ═══════════════════════════════════════════════════════════════ */
 const chatterFiles = [
-  'chatters/2026-05-12.md'
+  'chatters/2026-05-12.md',
+  'chatters/2026-05-14.md'
 ];
 
 const chatterList = [
+  { title: '继续把博客当成笔记本来写', date: '2026-05-14', filename: '2026-05-14.md', path: 'chatters/2026-05-14.md' },
   { title: '博客上线记录', date: '2026-05-12', filename: '2026-05-12.md', path: 'chatters/2026-05-12.md' }
 ];
 
 const photoAlbum = {
-  title: '败犬',
-  subtitle: '点击查看相册',
+  title: '日常相册',
+  subtitle: '点开看看最近收藏和随手记录',
   photos: [
     { src: 'images/Yanami_1.JPG',  label: '' },
     { src: 'images/Yanami_2.PNG',  label: '' },
@@ -139,6 +184,99 @@ const photoAlbum = {
 const siteStartDate = '2026-05-12T00:00:00';
 
 let homeMomentsCache = [];
+let archiveFilterState = { category: 'all', tag: 'all', search: '' };
+
+function getArchivePosts() {
+  return postList.map(function(post, index) {
+    return Object.assign({ _index: index }, post);
+  });
+}
+
+function getArchiveCategories(posts) {
+  return Array.from(new Set(posts.map(function(post) {
+    return post.category;
+  }).filter(Boolean)));
+}
+
+function getArchiveTags(posts) {
+  var tagSet = new Set();
+  posts.forEach(function(post) {
+    (post.tags || []).forEach(function(tag) {
+      tagSet.add(tag);
+    });
+  });
+  return Array.from(tagSet);
+}
+
+function filterArchivePosts(category, tag) {
+  return getArchivePosts().filter(function(post) {
+    var categoryMatch = !category || category === 'all' ? true : post.category === category;
+    var tagMatch = !tag || tag === 'all' ? true : (post.tags || []).indexOf(tag) !== -1;
+    return categoryMatch && tagMatch;
+  });
+}
+
+function getLatestArchivePost(category, tag) {
+  var posts = filterArchivePosts(category, tag);
+  return posts.length ? posts[0] : null;
+}
+
+function mergeTags(primary, secondary) {
+  var merged = [];
+  (primary || []).concat(secondary || []).forEach(function(tag) {
+    if (!tag) return;
+    if (merged.indexOf(tag) === -1) merged.push(tag);
+  });
+  return merged;
+}
+
+function estimateReadingMinutes(text) {
+  var normalized = stripMarkdown(text || '').replace(/\s+/g, ' ').trim();
+  if (!normalized) return 1;
+  var length = normalized.length;
+  return Math.max(1, Math.round(length / 320));
+}
+
+function getAdjacentContent(index, source) {
+  var list = source === 'chatter' ? chatterList : postList;
+  return {
+    newer: index > 0 ? list[index - 1] : null,
+    older: index < list.length - 1 ? list[index + 1] : null
+  };
+}
+
+function getRelatedContent(post, index, source) {
+  var list = source === 'chatter' ? chatterList : postList;
+  if (source === 'chatter') {
+    return list
+      .map(function(item, itemIndex) {
+        if (itemIndex === index) return null;
+        return { item: item, index: itemIndex, score: 1 };
+      })
+      .filter(Boolean)
+      .slice(0, 2);
+  }
+
+  return list
+    .map(function(item, itemIndex) {
+      if (itemIndex === index) return null;
+      var sameCategory = item.category && post.category && item.category === post.category ? 2 : 0;
+      var sharedTags = (item.tags || []).filter(function(tag) {
+        return (post.tags || []).indexOf(tag) !== -1;
+      }).length;
+      return {
+        item: item,
+        index: itemIndex,
+        score: sameCategory + sharedTags
+      };
+    })
+    .filter(Boolean)
+    .sort(function(a, b) {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(b.item.date).getTime() - new Date(a.item.date).getTime();
+    })
+    .slice(0, 3);
+}
 
 const navSearchPages = [
   { type: 'page', title: '首页', meta: 'HOME', action: 'home', keywords: ['首页', 'home', '主页'] },
@@ -165,6 +303,29 @@ function stripMarkdown(md) {
     .replace(/\r?\n+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function escapeHtmlText(text) {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function normalizeSearchText(text) {
+  return String(text || '').toLowerCase().trim();
+}
+
+function slugifyHeading(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/<[^>]+>/g, '')
+    .replace(/[^\w\u4e00-\u9fa5\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 
 function parseFrontmatterBlock(md) {
@@ -289,6 +450,7 @@ async function buildSearchIndex() {
       title: item.title,
       meta: item.meta,
       action: item.action,
+      desc: '快速跳转到这个页面，继续按栏目浏览内容。',
       keywords: item.keywords.join(' ')
     };
   });
@@ -297,9 +459,10 @@ async function buildSearchIndex() {
     entries.push({
       type: 'post',
       title: post.title || '未命名文章',
-      meta: '文章 · ' + (post.date || ''),
+      meta: (post.category || '文章') + ' · ' + (post.date || ''),
+      desc: post.summary || ((post.tags || []).slice(0, 3).join(' · ') || '打开正文，继续看完整思路和过程记录。'),
       open: function() { window._openWriteupArticle(index); },
-      keywords: [post.title, post.date, '文章', '归档', 'writeup'].join(' ')
+      keywords: [post.title, post.date, post.category, (post.tags || []).join(' '), post.summary, '文章', '归档', 'writeup'].join(' ')
     });
   });
 
@@ -308,6 +471,7 @@ async function buildSearchIndex() {
       type: 'chatter',
       title: post.title || '杂谈记录',
       meta: '杂谈 · ' + (post.date || ''),
+      desc: '进入短记录正文，继续看完整内容。',
       open: function() { window._openChatterFile(post.path, post.title, post.date); },
       keywords: [post.title, post.date, '杂谈', 'chatter', '博客'].join(' ')
     });
@@ -321,6 +485,7 @@ async function buildSearchIndex() {
         title: moment.title || stripMarkdown(moment.content).slice(0, 16) || '说说',
         meta: '说说 · ' + (moment.date || ''),
         action: 'moments',
+        desc: stripMarkdown(moment.content).slice(0, 72) || '切换到说说页，看看最近的近况记录。',
         keywords: [moment.title, moment.date, (moment.tags || []).join(' '), stripMarkdown(moment.content).slice(0, 80), '说说'].join(' ')
       });
     });
@@ -338,6 +503,20 @@ async function hydrateHomePanels() {
   var momentTitleEl = document.getElementById('featuredMomentTitle');
   var momentMetaEl = document.getElementById('featuredMomentMeta');
   var momentDescEl = document.getElementById('featuredMomentDesc');
+  var storyPrimaryTitleEl = document.getElementById('homeStoryPrimaryTitle');
+  var storyPrimaryMetaEl = document.getElementById('homeStoryPrimaryMeta');
+  var storySecondaryTitleEl = document.getElementById('homeStorySecondaryTitle');
+  var storySecondaryMetaEl = document.getElementById('homeStorySecondaryMeta');
+  var storyTertiaryTitleEl = document.getElementById('homeStoryTertiaryTitle');
+  var storyTertiaryMetaEl = document.getElementById('homeStoryTertiaryMeta');
+  var topicHTBTitleEl = document.getElementById('homeTopicHTBTitle');
+  var topicHTBMetaEl = document.getElementById('homeTopicHTBMeta');
+  var topicWebTitleEl = document.getElementById('homeTopicWebTitle');
+  var topicWebMetaEl = document.getElementById('homeTopicWebMeta');
+  var topicEventTitleEl = document.getElementById('homeTopicEventTitle');
+  var topicEventMetaEl = document.getElementById('homeTopicEventMeta');
+  var topicNotesTitleEl = document.getElementById('homeTopicNotesTitle');
+  var topicNotesMetaEl = document.getElementById('homeTopicNotesMeta');
   var albumTitleEl = document.getElementById('homeAlbumTitle');
   var albumMetaEl = document.getElementById('homeAlbumMeta');
   var thumbsEl = document.getElementById('homeGalleryThumbs');
@@ -349,17 +528,62 @@ async function hydrateHomePanels() {
   var uptimeEl = document.getElementById('homeUptime');
   var runtimeEl = document.getElementById('bentoRuntime');
   var pvInlineEl = document.getElementById('homePvInline');
+  var currentFocusEl = document.getElementById('homeCurrentFocus');
+  var currentFocusDescEl = document.getElementById('homeCurrentFocusDesc');
 
   var latestPost = postList[0];
+  var secondPost = postList[1];
+  var htbLatest = getLatestArchivePost('all', 'HTB');
+  var webLatest = getLatestArchivePost('Web', 'all');
+  var eventLatest = getLatestArchivePost('all', 'LitCTF');
+  var notesLatest = getLatestArchivePost('Journal', 'all');
+  var htbCount = filterArchivePosts('all', 'HTB').length;
+  var webCount = filterArchivePosts('Web', 'all').length;
+  var eventCount = filterArchivePosts('all', 'LitCTF').length;
+  var notesCount = filterArchivePosts('Journal', 'all').length;
+
+  function fillTopicCard(titleEl, metaEl, latestItem, count, fallbackTitle) {
+    if (titleEl) {
+      titleEl.textContent = latestItem ? latestItem.title : fallbackTitle;
+    }
+    if (metaEl) {
+      metaEl.textContent = latestItem
+        ? (count + ' 篇 · 最近更新于 ' + getRelativeTimeText(latestItem.date))
+        : '这一条线暂时还没有整理好的内容';
+    }
+  }
   if (latestPost) {
     writeupTitleEl.textContent = latestPost.title || '未命名文章';
     writeupMetaEl.textContent = getRelativeTimeText(latestPost.date);
-    writeupDescEl.textContent = '最近一篇归档文章已就位，点进来继续往下看。';
+    writeupDescEl.textContent = latestPost.summary || '最近整理好的一篇题解或学习记录，点进去继续看完整过程。';
   } else {
     writeupTitleEl.textContent = '暂无文章';
     writeupMetaEl.textContent = '等待第一篇发布';
-    writeupDescEl.textContent = '写完第一篇之后，这里会自动展示最近更新。';
+    writeupDescEl.textContent = '第一篇文章发布后，这里会自动接住最近整理好的内容。';
   }
+
+  if (storyPrimaryTitleEl) {
+    storyPrimaryTitleEl.textContent = latestPost ? latestPost.title : '从第一篇文章开始逛';
+  }
+  if (storyPrimaryMetaEl) {
+    storyPrimaryMetaEl.textContent = latestPost ? ((latestPost.category || '文章') + ' · ' + getRelativeTimeText(latestPost.date)) : '最近整理好的一篇文章';
+  }
+  if (storySecondaryTitleEl) {
+    storySecondaryTitleEl.textContent = secondPost ? secondPost.title : '去归档里继续往下逛';
+  }
+  if (storySecondaryMetaEl) {
+    storySecondaryMetaEl.textContent = secondPost ? ((secondPost.category || '文章') + ' · ' + getRelativeTimeText(secondPost.date)) : '看看更多题解和学习记录';
+  }
+  if (storyTertiaryTitleEl) {
+    storyTertiaryTitleEl.textContent = '我现在主要在补 Web 安全和 CTF';
+  }
+  if (storyTertiaryMetaEl) {
+    storyTertiaryMetaEl.textContent = '去关于页看当前路线、工具栈和学习重点';
+  }
+  fillTopicCard(topicHTBTitleEl, topicHTBMetaEl, htbLatest, htbCount, 'HTB 相关内容还在整理');
+  fillTopicCard(topicWebTitleEl, topicWebMetaEl, webLatest, webCount, 'Web 题解会集中放在这里');
+  fillTopicCard(topicEventTitleEl, topicEventMetaEl, eventLatest, eventCount, '比赛专题会逐步堆起来');
+  fillTopicCard(topicNotesTitleEl, topicNotesMetaEl, notesLatest, notesCount, '学习记录会放在这一条线');
 
   albumTitleEl.textContent = photoAlbum.title;
   albumMetaEl.textContent = '共 ' + photoAlbum.photos.length + ' 张，' + photoAlbum.subtitle;
@@ -386,17 +610,23 @@ async function hydrateHomePanels() {
 
       momentTitleEl.textContent = latestMoment.title || '最新说说';
       momentMetaEl.textContent = getRelativeTimeText(momentDatetime || latestMoment.date);
-      momentDescEl.textContent = stripMarkdown(latestMoment.content).slice(0, 72) || '最近的想法会显示在这里。';
+      momentDescEl.textContent = stripMarkdown(latestMoment.content).slice(0, 72) || '最近的想法和小记录会显示在这里。';
+      if (currentFocusEl) currentFocusEl.textContent = latestPost ? ('最近在整理：' + latestPost.title) : '最近在补 Web 安全和 CTF';
+      if (currentFocusDescEl) currentFocusDescEl.textContent = '最新近况：' + (latestMoment.title || stripMarkdown(latestMoment.content).slice(0, 26));
     } else {
       momentTitleEl.textContent = '暂无说说';
       momentMetaEl.textContent = '等待下一条记录';
-      momentDescEl.textContent = '发布新的 chatter 后，这里会自动出现摘要。';
+      momentDescEl.textContent = '写下一条新的近况后，这里会自动出现摘要。';
+      if (currentFocusEl) currentFocusEl.textContent = latestPost ? ('最近在整理：' + latestPost.title) : '最近在补 Web 安全和 CTF';
+      if (currentFocusDescEl) currentFocusDescEl.textContent = '如果你是第一次来，首页会优先展示最近整理和长期主线。';
     }
   } catch (err) {
     momentCountEl.textContent = '0';
-    momentTitleEl.textContent = '说说读取失败';
+    momentTitleEl.textContent = '近况读取失败';
     momentMetaEl.textContent = '请检查 chatters 目录';
-    momentDescEl.textContent = '当前无法读取碎片记录，但其他页面不受影响。';
+    momentDescEl.textContent = '当前无法读取近况记录，但其他页面不受影响。';
+    if (currentFocusEl) currentFocusEl.textContent = latestPost ? ('最近在整理：' + latestPost.title) : '最近在补 Web 安全和 CTF';
+    if (currentFocusDescEl) currentFocusDescEl.textContent = '近况读取失败时，建议先从归档和关于页进入。';
   }
 
   if (latestDates.length) {
@@ -423,6 +653,13 @@ async function hydrateHomePanels() {
   var featuredWriteupCard = document.getElementById('featuredWriteupCard');
   var featuredMomentCard = document.getElementById('featuredMomentCard');
   var homeGalleryLink = document.getElementById('homeGalleryLink');
+  var storyPrimaryCard = document.getElementById('homeStoryPrimary');
+  var storySecondaryCard = document.getElementById('homeStorySecondary');
+  var storyTertiaryCard = document.getElementById('homeStoryTertiary');
+  var homeTopicHTBCard = document.getElementById('homeTopicHTB');
+  var homeTopicWebCard = document.getElementById('homeTopicWeb');
+  var homeTopicEventCard = document.getElementById('homeTopicEvent');
+  var homeTopicNotesCard = document.getElementById('homeTopicNotes');
 
   if (featuredWriteupCard) {
     featuredWriteupCard.onclick = function() {
@@ -437,6 +674,42 @@ async function hydrateHomePanels() {
   if (homeGalleryLink) {
     homeGalleryLink.onclick = function() {
       if (typeof window.renderPhotoAlbum === 'function') window.renderPhotoAlbum();
+    };
+  }
+  if (storyPrimaryCard) {
+    storyPrimaryCard.onclick = function() {
+      if (postList.length > 0 && typeof window._openWriteupArticle === 'function') return window._openWriteupArticle(0);
+    };
+  }
+  if (storySecondaryCard) {
+    storySecondaryCard.onclick = function() {
+      if (postList.length > 1 && typeof window._openWriteupArticle === 'function') return window._openWriteupArticle(1);
+      if (typeof window.renderArchive === 'function') return window.renderArchive();
+    };
+  }
+  if (storyTertiaryCard) {
+    storyTertiaryCard.onclick = function() {
+      if (typeof window.renderAbout === 'function') return window.renderAbout();
+    };
+  }
+  if (homeTopicHTBCard) {
+    homeTopicHTBCard.onclick = function() {
+      if (typeof window.openArchivePreset === 'function') return window.openArchivePreset('all', 'HTB');
+    };
+  }
+  if (homeTopicWebCard) {
+    homeTopicWebCard.onclick = function() {
+      if (typeof window.openArchivePreset === 'function') return window.openArchivePreset('Web', 'all');
+    };
+  }
+  if (homeTopicEventCard) {
+    homeTopicEventCard.onclick = function() {
+      if (typeof window.openArchivePreset === 'function') return window.openArchivePreset('all', 'LitCTF');
+    };
+  }
+  if (homeTopicNotesCard) {
+    homeTopicNotesCard.onclick = function() {
+      if (typeof window.openArchivePreset === 'function') return window.openArchivePreset('Journal', 'all');
     };
   }
 }
@@ -471,6 +744,7 @@ async function hydrateHomePanels() {
 
   /* ── Giscus loader (deduped, cleans up before inserting) ── */
   var _aboutGiscusTimer = null;
+  var _articleScrollHandler = null;
 
   function loadGiscus(container, theme) {
     if (!container) return;
@@ -523,6 +797,10 @@ async function hydrateHomePanels() {
 
   function hideArticle() {
     articleOverlay.classList.remove('visible');
+    if (_articleScrollHandler) {
+      articleBody.removeEventListener('scroll', _articleScrollHandler);
+      _articleScrollHandler = null;
+    }
     // Clean up Giscus iframe in article body to stop polling
     var ab = document.getElementById('articleBody');
     if (ab) {
@@ -578,8 +856,8 @@ async function hydrateHomePanels() {
       {
         name: 'w1n8 Blog',
         icon: '🏠',
-        desc: '一个用于记录学习笔记、CTF 练习、Web 安全入门、生活照片和个人项目的个人博客。整体采用玻璃拟态、二次元背景、暗色/日间主题切换和响应式布局设计。',
-        tags: ['HTML5', 'CSS3', 'Vanilla JS', 'GitHub Pages', 'Cloudflare', 'APlayer', 'Giscus'],
+        desc: '用来集中整理题解、Web 安全学习笔记、界面实验和阶段性总结的个人博客。这个站点本身既是展示页，也是我长期维护的练习场。',
+        tags: ['HTML', 'CSS', 'JavaScript', 'Markdown', 'CTF', 'Web Security'],
         liveUrl: 'https://win8Morean.github.io',
         repoUrl: 'https://github.com/win8Morean/win8Morean.github.io'
       }
@@ -590,8 +868,8 @@ async function hydrateHomePanels() {
       '<div class="showcase-hero showcase-hero--projects">' +
         '<div class="showcase-hero-main">' +
           '<span class="archive-kicker">Build Notes</span>' +
-          '<h3 class="showcase-hero-title">正在长期打磨的项目与实验场</h3>' +
-          '<p class="showcase-hero-desc">不只是展示链接，而是把每个项目当成一个持续更新的作品模块。</p>' +
+          '<h3 class="showcase-hero-title">把博客当成一个长期维护的实验场</h3>' +
+          '<p class="showcase-hero-desc">除了发文章，我也会把页面细节、内容组织和交互体验都当成项目的一部分慢慢打磨。</p>' +
         '</div>' +
         '<div class="showcase-stat-strip">' +
           '<div class="showcase-stat-card"><strong>' + projects.length + '</strong><span>PROJECTS</span></div>' +
@@ -632,18 +910,51 @@ async function hydrateHomePanels() {
     currentView = 'writeups';
     updateActiveNav('writeups');
     document.title = '归档 | w1n8';
-    var total = postList.length;
-    var latest = total > 0 ? postList[0] : null;
+    var allPosts = getArchivePosts();
+    var total = allPosts.length;
+    var categories = getArchiveCategories(allPosts);
+    var categoryPosts = archiveFilterState.category === 'all'
+      ? allPosts
+      : allPosts.filter(function(post) {
+          return post.category === archiveFilterState.category;
+        });
+    var availableTags = getArchiveTags(categoryPosts);
+    if (archiveFilterState.tag !== 'all' && availableTags.indexOf(archiveFilterState.tag) === -1) {
+      archiveFilterState.tag = 'all';
+    }
+    var filteredPosts = archiveFilterState.tag === 'all'
+      ? categoryPosts
+      : categoryPosts.filter(function(post) {
+          return (post.tags || []).indexOf(archiveFilterState.tag) !== -1;
+        });
+    var query = normalizeSearchText(archiveFilterState.search || '');
+    if (query) {
+      filteredPosts = filteredPosts.filter(function(post) {
+        var searchable = [
+          post.title,
+          post.summary,
+          post.category,
+          (post.tags || []).join(' '),
+          post.filename
+        ].join(' ');
+        return normalizeSearchText(searchable).includes(query);
+      });
+    }
+    var latest = filteredPosts[0] || allPosts[0] || null;
+    var currentViewLabel = archiveFilterState.category === 'all' ? '全部分类' : archiveFilterState.category;
+    if (archiveFilterState.tag !== 'all') currentViewLabel += ' · #' + archiveFilterState.tag;
+    if (archiveFilterState.search) currentViewLabel += ' · 搜索 "' + archiveFilterState.search + '"';
 
     contentInner.innerHTML =
-      sectionHTML('归档', 'ARCHIVE — 技术沉淀') +
+      sectionHTML('归档', 'ARCHIVE — 题解、笔记与阶段性总结') +
       '<div class="archive-hero">' +
         '<div class="archive-hero-main">' +
           '<span class="archive-kicker">Latest Dispatch</span>' +
           '<h3 class="archive-hero-title">' + (latest ? latest.title : '还没有归档内容') + '</h3>' +
-          '<p class="archive-hero-desc">' + (latest ? '最近的一篇文章已经整理进归档，点开继续看下去。' : '第一篇文章发布后，这里会成为你的内容中枢。') + '</p>' +
+          '<p class="archive-hero-desc">' + (latest ? (latest.summary || '最近整理好的一篇题解或学习记录已经归档，点开继续看完整过程。') : '第一篇文章发布后，这里会慢慢长成我的长期归档。') + '</p>' +
           '<div class="archive-hero-meta">' +
             '<span>总计 ' + total + ' 篇</span>' +
+            '<span>当前视图 · ' + currentViewLabel + '</span>' +
             '<span>' + (latest ? latest.date : '等待更新') + '</span>' +
           '</div>' +
         '</div>' +
@@ -653,28 +964,88 @@ async function hydrateHomePanels() {
             '<span class="archive-side-label">ARTICLES</span>' +
           '</div>' +
           '<div class="archive-side-card">' +
-            '<span class="archive-side-num">' + (latest ? getRelativeTimeText(latest.date) : '--') + '</span>' +
-            '<span class="archive-side-label">LAST UPDATE</span>' +
+            '<span class="archive-side-num">' + filteredPosts.length + '</span>' +
+            '<span class="archive-side-label">IN VIEW</span>' +
           '</div>' +
         '</div>' +
       '</div>' +
       (
         total === 0
+          ? ''
+          : '<div class="archive-filters-wrap">' +
+              '<div class="archive-search-box">' +
+                '<svg class="archive-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                  '<circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>' +
+                '</svg>' +
+                '<input class="archive-search-input" id="archiveSearchInput" type="text" value="' + escapeHtmlText(archiveFilterState.search || '') + '" placeholder="搜索标题、摘要、分类、标签...">' +
+                '<button class="archive-search-clear" id="archiveSearchClear" type="button">清空</button>' +
+              '</div>' +
+              '<div class="archive-filter-group">' +
+                '<span class="archive-filter-label">分类</span>' +
+                '<div class="archive-filters">' +
+                  '<button class="archive-pill' + (archiveFilterState.category === 'all' ? ' active' : '') + '" type="button" onclick="window.setArchiveCategoryFilter(\'all\')">全部</button>' +
+                  categories.map(function(category) {
+                    return '<button class="archive-pill' + (archiveFilterState.category === category ? ' active' : '') + '" type="button" onclick="window.setArchiveCategoryFilter(' + JSON.stringify(category) + ')">' + category + '</button>';
+                  }).join('') +
+                '</div>' +
+              '</div>' +
+              '<div class="archive-filter-group">' +
+                '<span class="archive-filter-label">标签</span>' +
+                '<div class="archive-filters archive-filters--tags">' +
+                  '<button class="archive-pill' + (archiveFilterState.tag === 'all' ? ' active' : '') + '" type="button" onclick="window.setArchiveTagFilter(\'all\')">全部</button>' +
+                  availableTags.map(function(tag) {
+                    return '<button class="archive-pill' + (archiveFilterState.tag === tag ? ' active' : '') + '" type="button" onclick="window.setArchiveTagFilter(' + JSON.stringify(tag) + ')">#' + tag + '</button>';
+                  }).join('') +
+                '</div>' +
+              '</div>' +
+              '<div class="archive-filter-summary">当前显示 ' + filteredPosts.length + ' / ' + total + ' 篇内容</div>' +
+            '</div>'
+      ) +
+      (
+        total === 0
           ? '<div class="archive-empty">暂无归档内容</div>'
+          : filteredPosts.length === 0
+            ? '<div class="archive-empty">当前筛选下还没有结果，试试切换分类、标签或搜索词。</div>'
           : '<div class="archive-stream">' +
-              postList.map(function(post, index) {
+              filteredPosts.map(function(post) {
+                var badges = '<span class="archive-entry-badge archive-entry-badge--category">' + (post.category || 'Article') + '</span>' +
+                  (post.tags || []).slice(0, 3).map(function(tag) {
+                    return '<span class="archive-entry-badge">#' + tag + '</span>';
+                  }).join('');
                 return '' +
-                  '<button class="archive-entry" type="button" onclick="window._openWriteupArticle(' + index + ')">' +
+                  '<button class="archive-entry" type="button" onclick="window._openWriteupArticle(' + post._index + ')">' +
                     '<div class="archive-entry-date">' + (post.date || '--') + '</div>' +
                     '<div class="archive-entry-body">' +
+                      '<div class="archive-entry-top"><div class="archive-entry-badges">' + badges + '</div></div>' +
                       '<h3 class="archive-entry-title">' + post.title + '</h3>' +
-                      '<p class="archive-entry-desc">点击进入文章正文，继续阅读这篇归档内容。</p>' +
+                      '<p class="archive-entry-desc">' + (post.summary || '点开进入正文，查看完整思路、过程记录和关键细节。') + '</p>' +
                     '</div>' +
                     '<div class="archive-entry-arrow">↗</div>' +
                   '</button>';
               }).join('') +
             '</div>'
       );
+
+    var archiveSearchInput = document.getElementById('archiveSearchInput');
+    var archiveSearchClear = document.getElementById('archiveSearchClear');
+    if (archiveSearchInput) {
+      archiveSearchInput.addEventListener('input', function() {
+        archiveFilterState.search = archiveSearchInput.value;
+        renderArchive();
+        setTimeout(function() {
+          var nextInput = document.getElementById('archiveSearchInput');
+          if (!nextInput) return;
+          nextInput.focus();
+          nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+        }, 0);
+      });
+    }
+    if (archiveSearchClear) {
+      archiveSearchClear.addEventListener('click', function() {
+        archiveFilterState.search = '';
+        renderArchive();
+      });
+    }
   }
 
   /* ── Article Reader (shared by Writeups & Chatter) ── */
@@ -696,20 +1067,120 @@ async function hydrateHomePanels() {
       const res = await fetch(isChatter && post.path ? post.path : (basePath + filename));
       if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
       const md = await res.text();
-      const html = marked.parse(md);
+      const fm = parseFrontmatterBlock(md);
+      const articleTitle = fm.title || post.title || '未命名文章';
+      const articleDate = fm.date || post.date || '--';
+      const articleTags = mergeTags(post.tags, fm.tags);
+      const articleContent = fm.content || md;
+      const articleText = stripMarkdown(articleContent);
+      const articleHtml = marked.parse(articleContent);
+      const articleDoc = new DOMParser().parseFromString('<div class="article-prose-root">' + articleHtml + '</div>', 'text/html');
+      const headingNodes = Array.from(articleDoc.querySelectorAll('h2, h3'));
+      const articleOutline = headingNodes.map(function(heading, headingIndex) {
+        var text = (heading.textContent || '').trim();
+        var id = 'article-heading-' + headingIndex + '-' + slugifyHeading(text || ('section-' + headingIndex));
+        heading.id = id;
+        return {
+          id: id,
+          text: text,
+          level: heading.tagName.toLowerCase()
+        };
+      });
+      const articleProseHtml = articleDoc.querySelector('.article-prose-root').innerHTML;
+      const readingMinutes = estimateReadingMinutes(articleText);
+      const categoryLabel = isChatter ? 'Chatter' : (post.category || 'Article');
+      const adjacent = getAdjacentContent(index, source);
+      const related = getRelatedContent(Object.assign({}, post, { tags: articleTags }), index, source);
+      const articleBadges = [
+        '<span class="article-meta-badge article-meta-badge--category">' + escapeHtmlText(categoryLabel) + '</span>'
+      ].concat(articleTags.slice(0, 5).map(function(tag) {
+        return '<span class="article-meta-badge">#' + escapeHtmlText(tag) + '</span>';
+      })).join('');
+      const adjacentHtml = [adjacent.newer, adjacent.older].filter(Boolean).map(function(item, itemOffset) {
+        var targetIndex = itemOffset === 0 && adjacent.newer ? index - 1 : index + 1;
+        var targetSource = source;
+        var label = targetIndex < index ? '较新的内容' : '继续往后看';
+        var meta = item.date || '--';
+        var onclick = targetSource === 'chatter'
+          ? 'window._openChatterArticle(' + targetIndex + ')'
+          : 'window._openWriteupArticle(' + targetIndex + ')';
+        return '' +
+          '<button class="article-nav-card" type="button" onclick="' + onclick + '">' +
+            '<span class="article-nav-label">' + label + '</span>' +
+            '<strong class="article-nav-title">' + escapeHtmlText(item.title || '未命名内容') + '</strong>' +
+            '<span class="article-nav-meta">' + escapeHtmlText(meta) + '</span>' +
+          '</button>';
+      }).join('');
+      const relatedHtml = related.map(function(entry) {
+        var item = entry.item;
+        var onclick = source === 'chatter'
+          ? 'window._openChatterArticle(' + entry.index + ')'
+          : 'window._openWriteupArticle(' + entry.index + ')';
+        var relatedBadges = [];
+        if (source !== 'chatter' && item.category) {
+          relatedBadges.push('<span class="article-related-badge article-related-badge--category">' + escapeHtmlText(item.category) + '</span>');
+        }
+        (item.tags || []).slice(0, 2).forEach(function(tag) {
+          relatedBadges.push('<span class="article-related-badge">#' + escapeHtmlText(tag) + '</span>');
+        });
+        return '' +
+          '<button class="article-related-card" type="button" onclick="' + onclick + '">' +
+            '<div class="article-related-top">' + relatedBadges.join('') + '</div>' +
+            '<strong class="article-related-title">' + escapeHtmlText(item.title || '未命名内容') + '</strong>' +
+            '<p class="article-related-desc">' + escapeHtmlText(item.summary || '继续阅读相关内容。') + '</p>' +
+            '<span class="article-related-meta">' + escapeHtmlText(item.date || '--') + '</span>' +
+          '</button>';
+      }).join('');
+      const outlineHtml = articleOutline.length
+        ? '<aside class="article-outline-card">' +
+            '<div class="article-outline-head">' +
+              '<span class="article-section-kicker">ON THIS PAGE</span>' +
+              '<strong class="article-outline-title">目录</strong>' +
+            '</div>' +
+            '<div class="article-outline-links">' +
+              articleOutline.map(function(item) {
+                return '<button class="article-outline-link article-outline-link--' + item.level + '" type="button" data-target="' + item.id + '">' + escapeHtmlText(item.text) + '</button>';
+              }).join('') +
+            '</div>' +
+          '</aside>'
+        : '';
 
       const articleDiv = document.createElement('div');
       articleDiv.className = 'article-content';
       articleDiv.innerHTML =
         '<div class="article-lead">' +
           '<span class="article-kicker">' + sectionName + '</span>' +
-          '<h1 class="article-cover-title">' + (post.title || '未命名文章') + '</h1>' +
+          '<h1 class="article-cover-title">' + escapeHtmlText(articleTitle) + '</h1>' +
           '<div class="article-cover-meta">' +
-            '<span>' + (post.date || '--') + '</span>' +
-            '<span>' + filename + '</span>' +
+            '<span>' + escapeHtmlText(articleDate) + '</span>' +
+            '<span>' + readingMinutes + ' min read</span>' +
+            '<span>' + escapeHtmlText(filename) + '</span>' +
           '</div>' +
+          '<div class="article-progress"><span class="article-progress-fill" id="articleProgressFill"></span></div>' +
+          '<div class="article-meta-badges">' + articleBadges + '</div>' +
         '</div>' +
-        '<div class="article-prose">' + html + '</div>';
+        '<div class="article-layout">' +
+          outlineHtml +
+          '<div class="article-main">' +
+            '<div class="article-prose">' + articleProseHtml + '</div>' +
+        (
+          adjacentHtml
+            ? '<div class="article-nav-grid">' + adjacentHtml + '</div>'
+            : ''
+        ) +
+        (
+          relatedHtml
+            ? '<div class="article-related-section">' +
+                '<div class="article-section-head">' +
+                  '<span class="article-section-kicker">KEEP READING</span>' +
+                  '<h3 class="article-section-title">' + (isChatter ? '继续看看其他记录' : '相关文章') + '</h3>' +
+                '</div>' +
+                '<div class="article-related-grid">' + relatedHtml + '</div>' +
+              '</div>'
+            : ''
+        ) +
+          '</div>' +
+        '</div>';
 
       /* Giscus comment system */
       const giscusWrap = document.createElement('div');
@@ -724,6 +1195,41 @@ async function hydrateHomePanels() {
       articleBody.innerHTML = '';
       articleBody.appendChild(articleDiv);
       articleBody.scrollTop = 0;
+      if (_articleScrollHandler) {
+        articleBody.removeEventListener('scroll', _articleScrollHandler);
+      }
+      var progressFill = articleDiv.querySelector('#articleProgressFill');
+      var outlineLinks = Array.from(articleDiv.querySelectorAll('.article-outline-link'));
+      var outlineTargets = outlineLinks.map(function(link) {
+        return articleDiv.querySelector('#' + link.dataset.target);
+      });
+      outlineLinks.forEach(function(link) {
+        link.addEventListener('click', function() {
+          var target = articleDiv.querySelector('#' + link.dataset.target);
+          if (!target) return;
+          articleBody.scrollTo({
+            top: Math.max(0, target.offsetTop - 110),
+            behavior: 'smooth'
+          });
+        });
+      });
+      _articleScrollHandler = function() {
+        var maxScroll = articleBody.scrollHeight - articleBody.clientHeight;
+        var ratio = maxScroll > 0 ? Math.min(1, Math.max(0, articleBody.scrollTop / maxScroll)) : 0;
+        if (progressFill) progressFill.style.transform = 'scaleX(' + ratio + ')';
+        if (!outlineLinks.length) return;
+        var activeIndex = 0;
+        outlineTargets.forEach(function(target, targetIndex) {
+          if (target && target.offsetTop - 130 <= articleBody.scrollTop) {
+            activeIndex = targetIndex;
+          }
+        });
+        outlineLinks.forEach(function(link, linkIndex) {
+          link.classList.toggle('active', linkIndex === activeIndex);
+        });
+      };
+      articleBody.addEventListener('scroll', _articleScrollHandler, { passive: true });
+      _articleScrollHandler();
     } catch (err) {
       articleBody.innerHTML = '' +
         '<div class="post-list-empty">' +
@@ -749,7 +1255,7 @@ async function hydrateHomePanels() {
     document.title = '照片墙 | w1n8';
 
     contentInner.innerHTML =
-      sectionHTML('光影画廊', 'PHOTOS — 一些值得记录的瞬间') +
+      sectionHTML('光影画廊', 'PHOTOS — 收藏、随手记录与一些喜欢的画面') +
       '<div class="photo-album-card" onclick="renderPhotoAlbum()">' +
         '<div class="photo-stack-wrap">' +
           '<img src="' + photoAlbum.photos[0].src + '" alt="' + photoAlbum.title + '">' +
@@ -759,7 +1265,7 @@ async function hydrateHomePanels() {
         '<div class="photo-album-count">共 ' + photoAlbum.photos.length + ' 张 · 点击查看相册</div>' +
       '</div>' +
       '<p style="text-align:center;margin-top:24px;color:var(--slate-500);font-size:13px;font-family:var(--font-serif)">' +
-        '更多照片即将更新...' +
+        '照片会继续慢慢补，先把值得留下来的片段存起来。' +
       '</p>';
   }
 
@@ -797,6 +1303,31 @@ async function hydrateHomePanels() {
 
   window.renderPhotoAlbum = renderPhotoAlbum;
   window.renderMoments = renderMoments;
+  window.renderArchive = renderArchive;
+  window.renderAbout = renderAbout;
+  window.setArchiveCategoryFilter = function(category) {
+    archiveFilterState.category = category || 'all';
+    var categoryPosts = archiveFilterState.category === 'all'
+      ? getArchivePosts()
+      : getArchivePosts().filter(function(post) {
+          return post.category === archiveFilterState.category;
+        });
+    var availableTags = getArchiveTags(categoryPosts);
+    if (archiveFilterState.tag !== 'all' && availableTags.indexOf(archiveFilterState.tag) === -1) {
+      archiveFilterState.tag = 'all';
+    }
+    renderArchive();
+  };
+  window.setArchiveTagFilter = function(tag) {
+    archiveFilterState.tag = tag || 'all';
+    renderArchive();
+  };
+  window.openArchivePreset = function(category, tag) {
+    archiveFilterState.category = category || 'all';
+    archiveFilterState.tag = tag || 'all';
+    archiveFilterState.search = '';
+    renderArchive();
+  };
   window._openWriteupArticle = function(index) {
     openArticle(index, 'writeups');
   };
@@ -811,7 +1342,7 @@ async function hydrateHomePanels() {
     document.title = '音乐 | w1n8';
 
     contentInner.innerHTML =
-      sectionHTML('音乐馆', 'MUSIC — 沉浸式听歌体验') +
+      sectionHTML('音乐馆', 'MUSIC — 用来边写边放空的背景声') +
       /* Loading skeleton */
       '<div class="music-loading" id="musicLoading">' +
         '<div class="music-loading-spin"></div>' +
@@ -992,7 +1523,7 @@ async function hydrateHomePanels() {
     document.title = '说说 | w1n8';
 
     contentInner.innerHTML =
-      sectionHTML('说说', 'MOMENTS — 碎片化记录') +
+      sectionHTML('说说', 'MOMENTS — 近况、碎片和临时想法') +
       '<div class="moments-shell">' +
         '<div class="moments-shell-head">' +
           '<div class="moments-shell-copy">' +
@@ -1050,7 +1581,7 @@ async function hydrateHomePanels() {
     });
 
     if (moments.length === 0) {
-      container.innerHTML = '<div class="post-list-empty">还没有说说，敬请期待。</div>';
+      container.innerHTML = '<div class="post-list-empty">还没有新的近况记录，先去看看归档和专题入口也不错。</div>';
       return;
     }
 
@@ -1105,7 +1636,7 @@ async function hydrateHomePanels() {
     updateActiveNav('chatter');
     document.title = '杂谈 | w1n8';
 
-    let html = sectionHTML('云端杂谈', 'CHATTER — 共 ' + chatterList.length + ' 篇文章');
+    let html = sectionHTML('随手杂谈', 'CHATTER — 共 ' + chatterList.length + ' 篇短记录');
 
     if (chatterList.length === 0) {
       html += '<div class="post-list-empty">还没有文章，敬请期待。</div>';
@@ -1120,9 +1651,9 @@ async function hydrateHomePanels() {
                   '<span class="chatter-note-badge">NOTE</span>' +
                 '</div>' +
                 '<h3 class="chatter-note-title">' + post.title + '</h3>' +
-                '<p class="chatter-note-desc">从云端摘下一张记录卡，点开继续阅读完整内容。</p>' +
+                '<p class="chatter-note-desc">一些不适合写成长文、但值得单独记下来的片段。</p>' +
                 '<div class="chatter-note-foot">' +
-                  '<span class="chatter-note-cta">进入阅读</span>' +
+                  '<span class="chatter-note-cta">展开记录</span>' +
                   '<span class="chatter-note-arrow">→</span>' +
                 '</div>' +
               '</button>';
@@ -1156,17 +1687,17 @@ async function hydrateHomePanels() {
     document.title = '友链 | w1n8';
 
     const friends = [
-      { name: '青岑靶场', desc: 'CTF 在线练习平台', avatar: '🎯', url: 'https://ctf.qingcen.net/' },
-      { name: 'tooki', desc: 'Pwn 大手子的技术角落', avatar: '', image: 'images/tooki.jpg', url: 'https://tooki-blog.vercel.app/' }
+      { name: '青岑靶场', desc: '在线 CTF 练习平台，适合日常刷题和打基本功。', avatar: '🎯', url: 'https://ctf.qingcen.net/' },
+      { name: 'tooki', desc: '偏向 Pwn 方向的个人博客，记录题解、学习笔记和实战经验。', avatar: '', image: 'images/tooki.jpg', url: 'https://tooki-blog.vercel.app/' }
     ];
 
     contentInner.innerHTML =
-      sectionHTML('友链', 'FRIENDS — 伙伴们的角落') +
+      sectionHTML('友链', 'FRIENDS — 我会反复回访的站点角落') +
       '<div class="showcase-hero showcase-hero--friends">' +
         '<div class="showcase-hero-main">' +
           '<span class="archive-kicker">Companions</span>' +
-          '<h3 class="showcase-hero-title">一起折腾、一起记录的站点角落</h3>' +
-          '<p class="showcase-hero-desc">把友链页也做成一面内容展板，让每个链接都更像一个独立小宇宙。</p>' +
+          '<h3 class="showcase-hero-title">一起折腾技术，也认真记录各自轨迹的朋友们</h3>' +
+          '<p class="showcase-hero-desc">这些链接不只是跳转入口，更像是我平时会反复回访、顺手看看近况的长期据点。</p>' +
         '</div>' +
         '<div class="showcase-stat-strip">' +
           '<div class="showcase-stat-card"><strong>' + friends.length + '</strong><span>FRIENDS</span></div>' +
@@ -1190,7 +1721,7 @@ async function hydrateHomePanels() {
           '</a>'
         ).join('') +
       '</div>' +
-      '<div class="friends-cta-note">🍻 友链位招租中，欢迎来交换各自的角落。</div>';
+      '<div class="friends-cta-note">🍻 友链位长期开放，欢迎来交换各自的技术角落。</div>';
   }
 
   /* ═══════════════════════════════════════════
@@ -1198,40 +1729,40 @@ async function hydrateHomePanels() {
      ═══════════════════════════════════════════ */
   function renderAbout() {
     showPage();
-    document.body.classList.add('route-about');
     currentView = 'about';
     updateActiveNav('about');
     document.title = '关于 | w1n8';
 
     contentInner.innerHTML =
-      /* ── Floating keywords background ── */
-      '<div class="about-bg-keywords" id="aboutBgKeywords"></div>' +
-
-      /* ── Page wrapper ── */
+      sectionHTML('关于', 'ABOUT — 我现在在学什么，也想把这里写成什么样子') +
       '<div class="about-wrapper">' +
-
-        /* ── Profile Banner ── */
         '<div class="about-banner">' +
-          '<div class="about-banner-avatar">' +
-            '<img src="images/tomori.jpg" alt="w1n8">' +
-            '<div class="about-banner-ring"></div>' +
+          '<div class="about-banner-main">' +
+            '<div class="about-banner-avatar">' +
+              '<img src="images/tomori.jpg" alt="w1n8">' +
+              '<div class="about-banner-ring"></div>' +
+            '</div>' +
+            '<div class="about-banner-body">' +
+              '<span class="about-banner-kicker">ABOUT ME</span>' +
+              '<h1 class="about-banner-title">HELLO WORLD, I\'M <span class="about-accent">w1n8</span></h1>' +
+              '<p class="about-banner-desc">网络空间安全专业本科生 · 目前主要在学 Web 安全与 CTF · 西安</p>' +
+              '<p class="about-banner-bio">喜欢把零散的学习过程整理成能回看的记录。这里会放题解、复现、踩坑笔记，也会保留一些正在思考的问题和阶段性总结。</p>' +
+            '</div>' +
           '</div>' +
-          '<div class="about-banner-body">' +
-            '<h1 class="about-banner-title">HELLO WORLD, I\'M <span class="about-accent">w1n8</span></h1>' +
-            '<p class="about-banner-desc">网络空间安全专业本科生 · 在学 · 西安</p>' +
-            '<p class="about-banner-bio">热爱代码与网络安全，正在一步一个脚印地学习成长。记录所学、分享所得，这个博客就是我的技术笔记本。</p>' +
+          '<div class="about-banner-side">' +
             '<div class="about-banner-stats">' +
-              '<div class="about-stat"><span class="about-stat-num">2+</span><span class="about-stat-label">Years Coding</span></div>' +
-              '<div class="about-stat"><span class="about-stat-num">CTF</span><span class="about-stat-label">Beginner</span></div>' +
-              '<div class="about-stat"><span class="about-stat-num">Xi\'an</span><span class="about-stat-label">Base</span></div>' +
+              '<div class="about-stat"><span class="about-stat-num">Web</span><span class="about-stat-label">主攻方向</span></div>' +
+              '<div class="about-stat"><span class="about-stat-num">CTF</span><span class="about-stat-label">持续练习</span></div>' +
+              '<div class="about-stat"><span class="about-stat-num">Xi\'an</span><span class="about-stat-label">坐标</span></div>' +
+            '</div>' +
+            '<div class="about-banner-note">' +
+              '<span class="about-banner-note-kicker">NOW</span>' +
+              '<p>这段时间会优先整理 Web 题解、补自动化脚本能力，再把能沉淀下来的东西慢慢归档进来。</p>' +
             '</div>' +
           '</div>' +
         '</div>' +
 
-        /* ── Expertise Grid ── */
         '<div class="about-grid">' +
-
-          /* Research Direction */
           '<div class="about-card about-card--research">' +
             '<div class="about-card-icon">' +
               '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' +
@@ -1241,22 +1772,20 @@ async function hydrateHomePanels() {
               '<div class="about-research-item">' +
                 '<span class="about-research-icon">&#9879;</span>' +
                 '<span class="about-research-name">Web 安全</span>' +
-                '<span class="about-research-desc">OWASP Top 10 · SQLi · XSS · CSRF</span>' +
+                '<span class="about-research-desc">从常见漏洞原理到复现分析，先把基本功打稳。</span>' +
               '</div>' +
               '<div class="about-research-item">' +
                 '<span class="about-research-icon">&#9760;</span>' +
                 '<span class="about-research-name">CTF 入门</span>' +
-                '<span class="about-research-desc">Web · Misc · 基础逆向</span>' +
+                '<span class="about-research-desc">以 Web / Misc 为主，逐步补足脚本和分析能力。</span>' +
               '</div>' +
               '<div class="about-research-item">' +
                 '<span class="about-research-icon">&#9881;</span>' +
-                '<span class="about-research-name">技能积累</span>' +
-                '<span class="about-research-desc">Linux · Python · 工具使用</span>' +
+                '<span class="about-research-name">工具与习惯</span>' +
+                '<span class="about-research-desc">Linux、Python、Burp Suite 和日常工具链持续熟悉中。</span>' +
               '</div>' +
             '</div>' +
           '</div>' +
-
-          /* Tech Stack Arsenal */
           '<div class="about-card about-card--arsenal">' +
             '<div class="about-card-icon">' +
               '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>' +
@@ -1267,14 +1796,13 @@ async function hydrateHomePanels() {
               '<span class="about-tag-pill">Python</span>' +
               '<span class="about-tag-pill">Git</span>' +
               '<span class="about-tag-pill">Docker</span>' +
+              '<span class="about-tag-pill">HTML/CSS/JS</span>' +
               '<span class="about-tag-pill">Burp Suite</span>' +
               '<span class="about-tag-pill">Nmap</span>' +
               '<span class="about-tag-pill">Wireshark</span>' +
               '<span class="about-tag-pill">SQLMap</span>' +
             '</div>' +
           '</div>' +
-
-          /* Learning Roadmap */
           '<div class="about-card about-card--roadmap">' +
             '<div class="about-card-icon">' +
               '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
@@ -1284,72 +1812,70 @@ async function hydrateHomePanels() {
               '<div class="about-roadmap-item done">' +
                 '<span class="about-roadmap-dot"></span>' +
                 '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">Linux 基础 & Bash 脚本</span>' +
+                  '<span class="about-roadmap-name">Linux 基础与常用命令</span>' +
                   '<span class="about-roadmap-status done-text">已完成</span>' +
                 '</div>' +
               '</div>' +
               '<div class="about-roadmap-item done">' +
                 '<span class="about-roadmap-dot"></span>' +
                 '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">Web 安全基础 (OWASP Top 10)</span>' +
+                  '<span class="about-roadmap-name">Web 安全常见漏洞梳理</span>' +
                   '<span class="about-roadmap-status done-text">已完成</span>' +
                 '</div>' +
               '</div>' +
               '<div class="about-roadmap-item active">' +
                 '<span class="about-roadmap-dot"></span>' +
                 '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">CTF 入门练习</span>' +
-                  '<div class="about-progress-bar"><div class="about-progress-fill" style="width:40%"></div></div>' +
-                  '<span class="about-roadmap-status">40%</span>' +
+                  '<span class="about-roadmap-name">CTF Web / Misc 题型积累</span>' +
+                  '<div class="about-progress-bar"><div class="about-progress-fill" style="width:55%"></div></div>' +
+                  '<span class="about-roadmap-status">55%</span>' +
                 '</div>' +
               '</div>' +
               '<div class="about-roadmap-item">' +
                 '<span class="about-roadmap-dot"></span>' +
                 '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">Python 脚本编写</span>' +
-                  '<span class="about-roadmap-status pending-text">进行中</span>' +
+                  '<span class="about-roadmap-name">Python 自动化脚本整理</span>' +
+                  '<span class="about-roadmap-status pending-text">持续推进</span>' +
                 '</div>' +
               '</div>' +
               '<div class="about-roadmap-item">' +
                 '<span class="about-roadmap-dot"></span>' +
                 '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">漏洞复现与笔记整理</span>' +
+                  '<span class="about-roadmap-name">漏洞复现与长期笔记沉淀</span>' +
                   '<span class="about-roadmap-status pending-text">日常积累</span>' +
                 '</div>' +
               '</div>' +
             '</div>' +
           '</div>' +
+          '<div class="about-card about-card--writing">' +
+            '<div class="about-card-icon">' +
+              '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+            '</div>' +
+            '<h3 class="about-card-title">这里会写什么</h3>' +
+            '<div class="about-writing-list">' +
+              '<div class="about-writing-item">' +
+                '<strong>题解与复现</strong>' +
+                '<span>优先记录真正做过、能复现、以后还会回看的内容。</span>' +
+              '</div>' +
+              '<div class="about-writing-item">' +
+                '<strong>阶段性笔记</strong>' +
+                '<span>把零散学习过程整理成带上下文的记录，而不是只留结论。</span>' +
+              '</div>' +
+              '<div class="about-writing-item">' +
+                '<strong>长期归档</strong>' +
+                '<span>希望慢慢把这个博客写成一个可以持续回翻的技术备忘录。</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
         '</div>' +
-
-        /* ── Giscus Comment Section ── */
         '<div class="about-comments" id="aboutComments">' +
           '<div class="about-comments-header">' +
             '<h3>留言板</h3>' +
-            '<p>留下你的足迹，或者来交换友链 ~</p>' +
+            '<p>欢迎交流学习路线、题解思路，或者顺手来交换友链。</p>' +
           '</div>' +
           '<div class="giscus" id="aboutGiscus"></div>' +
         '</div>' +
       '</div>';
-
-    /* ── Floating keywords background ── */
-    (function spawnKeywords() {
-      var container = document.getElementById('aboutBgKeywords');
-      if (!container) return;
-      var words = ['HTTP', 'Linux', 'Python', 'SQL', 'XSS', 'CSRF', 'Docker', 'Git', 'Nmap', 'CTF', 'Shell', 'TCP/IP', 'Burp', 'Wireshark', 'localhost', 'learning', 'notes', 'growth'];
-      var fragments = document.createDocumentFragment();
-      for (var i = 0; i < 18; i++) {
-        var el = document.createElement('span');
-        el.className = 'about-kw';
-        el.textContent = words[i];
-        el.style.left = (Math.random() * 90) + '%';
-        el.style.top = (Math.random() * 90) + '%';
-        el.style.animationDelay = (Math.random() * 8) + 's';
-        el.style.animationDuration = (10 + Math.random() * 14) + 's';
-        el.style.fontSize = (0.9 + Math.random() * 1.6) + 'rem';
-        fragments.appendChild(el);
-      }
-      container.appendChild(fragments);
-    })();
 
     /* ── Load Giscus ── */
     if (_aboutGiscusTimer) clearTimeout(_aboutGiscusTimer);
@@ -2025,7 +2551,7 @@ function showQRCode(type) {
       dropdown.innerHTML =
         '<div class="nav-search-empty">' +
           '<span class="nav-search-empty-title">没有找到匹配内容。</span>' +
-          '<span class="nav-search-empty-meta">换个关键词试试，或者直接点导航进入页面。</span>' +
+          '<span class="nav-search-empty-meta">可以换个关键词试试，或者直接从导航和专题入口进入。</span>' +
         '</div>';
       dropdown.classList.add('visible');
       return;
@@ -2047,15 +2573,7 @@ function showQRCode(type) {
           '<span class="nav-search-result-meta">' + entry.meta + '</span>' +
         '</span>' +
         '<span class="nav-search-result-title">' + highlightText(entry.title, input.value.trim()) + '</span>' +
-        '<span class="nav-search-result-desc">' + (
-          entry.type === 'page'
-            ? '快速跳转到这个页面入口。'
-            : (entry.type === 'post'
-              ? '打开文章正文，继续阅读详细内容。'
-              : (entry.type === 'chatter'
-                ? '进入杂谈正文，继续阅读完整记录。'
-                : '切换到说说页面，查看最近状态记录。'))
-        ) + '</span>';
+        '<span class="nav-search-result-desc">' + highlightText(entry.desc || '', input.value.trim()) + '</span>';
       button.addEventListener('click', function() {
         openResult(entry);
       });
@@ -2123,6 +2641,14 @@ function showQRCode(type) {
     if (window.innerWidth <= 768 && mobileFab) {
       mobileFab.classList.add('is-hidden');
     }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    var isShortcut = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k';
+    if (!isShortcut) return;
+    e.preventDefault();
+    input.focus();
+    input.select();
   });
 
   input.addEventListener('blur', function() {

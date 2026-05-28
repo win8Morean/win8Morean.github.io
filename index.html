@@ -51,7 +51,8 @@
         <svg class="nav-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input type="text" class="nav-search-input" id="navSearchInput" placeholder="搜索文章、页面或标签...">
+        <input type="text" class="nav-search-input" id="navSearchInput" placeholder="搜索题解、标签、页面...">
+        <span class="nav-search-hint">Ctrl K</span>
         <div class="nav-search-dropdown" id="navSearchDropdown"></div>
       </div>
       <button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换亮色/暗色主题">
@@ -124,8 +125,14 @@
             <h1 class="bento-name">
               <span id="typewriter"></span><span class="cursor" id="cursor">|</span>
             </h1>
-            <p class="bento-slogan">> Web security.</p>
-            <p class="bento-tags">CTF Player / Web Security</p>
+            <p class="bento-slogan">> 记录 Web 安全、CTF 与学习笔记。</p>
+            <p class="bento-tags">Web Security / CTF / Notes</p>
+            <p class="bento-intro-lead">把刷题、复现、踩坑和零碎想法，慢慢整理成一个自己会反复回看的技术角落。</p>
+            <div class="bento-focus-row">
+              <span class="bento-focus-pill">Web 漏洞复现</span>
+              <span class="bento-focus-pill">CTF 题解整理</span>
+              <span class="bento-focus-pill">脚本化练习</span>
+            </div>
           </div>
         </div>
         <div class="bento-profile-actions" id="nav">
@@ -183,12 +190,73 @@
         <span class="lyric-text" id="syncLyricText">享受音乐中...</span>
       </div>
 
+      <section class="bento-card home-story-card" id="homeStoryCard">
+        <div class="home-story-copy">
+          <span class="home-story-kicker">START HERE</span>
+          <h2 class="home-story-title">这里记录的是 Web 安全、CTF 和一条正在展开的学习路线。</h2>
+          <p class="home-story-desc">如果你是第一次来，最适合先从最近整理好的题解、专题入口和关于页开始逛。比起把内容堆满，我更想把这里慢慢养成一个长期更新、能反复回看的个人站。</p>
+        </div>
+        <div class="home-story-links">
+          <button class="home-story-link home-story-link--primary" id="homeStoryPrimary" type="button">
+            <span class="home-story-link-label">FEATURED WRITEUP</span>
+            <strong class="home-story-link-title" id="homeStoryPrimaryTitle">加载中...</strong>
+            <span class="home-story-link-meta" id="homeStoryPrimaryMeta">最近整理好的一篇文章</span>
+          </button>
+          <button class="home-story-link" id="homeStorySecondary" type="button">
+            <span class="home-story-link-label">NEXT READ</span>
+            <strong class="home-story-link-title" id="homeStorySecondaryTitle">加载中...</strong>
+            <span class="home-story-link-meta" id="homeStorySecondaryMeta">适合接着往下看的内容</span>
+          </button>
+          <button class="home-story-link home-story-link--soft" id="homeStoryTertiary" type="button">
+            <span class="home-story-link-label">ABOUT / NOW</span>
+            <strong class="home-story-link-title" id="homeStoryTertiaryTitle">我现在在学什么</strong>
+            <span class="home-story-link-meta" id="homeStoryTertiaryMeta">去关于页看当前路线</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="bento-card home-topics-card" id="homeTopicsCard">
+        <div class="home-topics-head">
+          <div>
+            <span class="home-topics-kicker">TOPIC LANES</span>
+            <h2 class="home-topics-title">按专题进入，会比按时间倒着翻更快找到重点。</h2>
+          </div>
+          <p class="home-topics-desc">把现有内容按题型、比赛和记录方式拆成几条入口。第一次来的人不用从头翻，也能更快找到自己想看的部分。</p>
+        </div>
+        <div class="home-topics-grid">
+          <button class="home-topic-card home-topic-card--htb" id="homeTopicHTB" type="button">
+            <span class="home-topic-label">HTB / AUTOMATION</span>
+            <strong class="home-topic-title" id="homeTopicHTBTitle">加载中...</strong>
+            <span class="home-topic-meta" id="homeTopicHTBMeta">专题统计中</span>
+            <p class="home-topic-desc">适合看脚本化思路、重复交互处理，以及那种一眼看上去简单、其实很适合练自动化的小题。</p>
+          </button>
+          <button class="home-topic-card home-topic-card--web" id="homeTopicWeb" type="button">
+            <span class="home-topic-label">WEB / WRITEUPS</span>
+            <strong class="home-topic-title" id="homeTopicWebTitle">加载中...</strong>
+            <span class="home-topic-meta" id="homeTopicWebMeta">专题统计中</span>
+            <p class="home-topic-desc">从漏洞点、利用链到复现步骤，这一栏更适合系统地看完整的 Web 题解。</p>
+          </button>
+          <button class="home-topic-card home-topic-card--event" id="homeTopicEvent" type="button">
+            <span class="home-topic-label">LITCTF / EVENT</span>
+            <strong class="home-topic-title" id="homeTopicEventTitle">加载中...</strong>
+            <span class="home-topic-meta" id="homeTopicEventMeta">专题统计中</span>
+            <p class="home-topic-desc">把同一场比赛的多篇题解串起来，适合按比赛脉络连续阅读。</p>
+          </button>
+          <button class="home-topic-card home-topic-card--notes" id="homeTopicNotes" type="button">
+            <span class="home-topic-label">NOTES / JOURNAL</span>
+            <strong class="home-topic-title" id="homeTopicNotesTitle">加载中...</strong>
+            <span class="home-topic-meta" id="homeTopicNotesMeta">专题统计中</span>
+            <p class="home-topic-desc">偏学习记录、阶段性总结和路线思考，适合了解我长期在补什么、怎么补。</p>
+          </button>
+        </div>
+      </section>
+
       <!-- ── Home Feed (2 cols) ── -->
       <div class="bento-card home-feed-card">
         <div class="home-card-head">
           <div>
             <span class="home-card-kicker">LATEST DISPATCH</span>
-            <h2 class="home-card-title">最近更新</h2>
+            <h2 class="home-card-title">最近整理</h2>
           </div>
           <button class="home-card-link" data-action="writeups">查看归档</button>
         </div>
@@ -209,7 +277,7 @@
         <button class="home-gallery-strip" id="homeGalleryLink" type="button">
           <div class="home-gallery-copy">
             <span class="home-feed-label">照片墙预览</span>
-            <strong id="homeAlbumTitle">败犬相册</strong>
+            <strong id="homeAlbumTitle">日常相册</strong>
             <span id="homeAlbumMeta">点击进入相册</span>
           </div>
           <div class="home-gallery-thumbs" id="homeGalleryThumbs"></div>
@@ -235,6 +303,11 @@
             <strong id="homePhotoCount">0</strong>
             <span>照片</span>
           </div>
+        </div>
+        <div class="pulse-focus-card">
+          <span class="pulse-focus-kicker">CURRENT FOCUS</span>
+          <strong class="pulse-focus-title" id="homeCurrentFocus">整理最近的题解和学习记录</strong>
+          <p class="pulse-focus-desc" id="homeCurrentFocusDesc">从最近整理和关于页开始，通常能最快看清我现在在写什么。</p>
         </div>
         <div class="pulse-stack">
           <div class="pulse-row">
