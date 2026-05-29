@@ -1688,7 +1688,8 @@ async function hydrateHomePanels() {
 
     const friends = [
       { name: '青岑靶场', desc: '在线 CTF 练习平台，适合日常刷题和打基本功。', avatar: '🎯', url: 'https://ctf.qingcen.net/' },
-      { name: 'tooki', desc: '偏向 Pwn 方向的个人博客，记录题解、学习笔记和实战经验。', avatar: '', image: 'images/tooki.jpg', url: 'https://tooki-blog.vercel.app/' }
+      { name: 'tooki', desc: '偏向 Pwn 方向的个人博客，记录题解、学习笔记和实战经验。', avatar: '', image: 'images/tooki.jpg', url: 'https://tooki-blog.vercel.app/' },
+      { name: 'UKY', desc: 'Web 大手子', avatar: '', image: 'images/uky.jpg', url: 'https://www.uky.show/' }
     ];
 
     contentInner.innerHTML =
