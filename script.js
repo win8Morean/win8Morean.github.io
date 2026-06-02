@@ -95,7 +95,7 @@
 /* ═══════════════════════════════════════════════════════════════
    Post List Data (for Writeups)
    ═══════════════════════════════════════════════════════════════ */
-const postList = [
+const postList_LEGACY = [
   {
     title: 'Hack The Box · Misc 两题速记',
     date: '2026-05-27',
@@ -150,12 +150,101 @@ const postList = [
    Chatter Files — 说说页面的 Markdown 文件列表
    新增说说时：把新 md 文件的路径加到这个数组即可。
    ═══════════════════════════════════════════════════════════════ */
-const chatterFiles = [
+const chatterFiles_LEGACY = [
   'chatters/2026-05-12.md',
   'chatters/2026-05-14.md'
 ];
 
+const chatterList_LEGACY = [
+  { title: '继续把博客当成笔记本来写', date: '2026-05-14', filename: '2026-05-14.md', path: 'chatters/2026-05-14.md' },
+  { title: '博客上线记录', date: '2026-05-12', filename: '2026-05-12.md', path: 'chatters/2026-05-12.md' }
+];
+
+const postList = [
+  {
+    title: 'WordPress 安全评估学习笔记',
+    date: '2026-06-02',
+    filename: 'WordPress 安全评估学习笔记.md',
+    category: 'Web',
+    tags: ['WordPress', 'Security', 'Notes'],
+    summary: '整理 WordPress 常见结构、信息收集点和安全评估里的高频思路。'
+  },
+  {
+    title: '渗透测试靶机实战笔记：WordPress 综合攻防',
+    date: '2026-06-02',
+    filename: 'Hack The Box WordPress模块.md',
+    category: 'Practice',
+    tags: ['HTB', 'WordPress', 'Pentest'],
+    summary: '围绕一台 WordPress 靶机记录信息收集、漏洞利用、爆破与拿 shell 的完整过程。'
+  },
+  {
+    title: 'Obsidian + AI 知识库工作流搭建',
+    date: '2026-05-29',
+    filename: 'Obsidian+AI 知识库工作流搭建.md',
+    category: 'Workflow',
+    tags: ['Obsidian', 'AI', 'Productivity'],
+    summary: '把 Claude Code、DeepSeek 和 Obsidian 串成一套可持续使用的知识库工作流。'
+  },
+  {
+    title: 'Hack The Box · Misc 两题速记',
+    date: '2026-05-27',
+    filename: 'hackthebox.md',
+    category: 'Practice',
+    tags: ['HTB', 'Misc', 'Automation'],
+    summary: '两道适合练自动化思路的 Misc 小题，核心都是把重复交互脚本化。'
+  },
+  {
+    title: 'LitCTF 2026 · Web 题解',
+    date: '2026-05-23',
+    filename: 'LitCTF2026_WEB_WP.md',
+    category: 'Web',
+    tags: ['LitCTF', 'Web', 'Writeup'],
+    summary: '从信息泄露点到利用链，整理两道 Web 题的完整解法。'
+  },
+  {
+    title: 'LitCTF 2026 · Misc 题解',
+    date: '2026-05-23',
+    filename: 'LitCTF2026_MISC_WP.md',
+    category: 'Misc',
+    tags: ['LitCTF', 'Misc', 'Writeup'],
+    summary: '覆盖 LSB、二维码修复、SSTV 等题型，适合作为 Misc 解题记录。'
+  },
+  {
+    title: 'LitCTF 2026 · Crypto 题解',
+    date: '2026-05-23',
+    filename: 'LitCTF2026_crypto_WP.md',
+    category: 'Crypto',
+    tags: ['LitCTF', 'Crypto', 'Writeup'],
+    summary: '记录 AES 爆破、ElGamal 和 RSA 分析过程，把关键脚本和思路留存下来。'
+  },
+  {
+    title: '5月21日刷题记录',
+    date: '2026-05-21',
+    filename: '5月21日刷题.md',
+    category: 'Practice',
+    tags: ['CTF', 'Practice', 'Notes'],
+    summary: '整理当天刷题过程里的关键步骤、脚本片段和切入点。'
+  },
+  {
+    title: '第一次周报11月',
+    date: '2025-11-09',
+    filename: 'week_1(November).md',
+    category: 'Journal',
+    tags: ['Weekly', 'Notes', 'Learning'],
+    summary: '记录一周学习目标、阶段收获和后续计划。'
+  }
+];
+
+const chatterFiles = [
+  'chatters/2026-06-1.md',
+  'chatters/2026-05-30.md',
+  'chatters/2026-05-14.md',
+  'chatters/2026-05-12.md'
+];
+
 const chatterList = [
+  { title: '今天入坑 Hack The Box', date: '2026-06-01', filename: '2026-06-1.md', path: 'chatters/2026-06-1.md' },
+  { title: '御网杯', date: '2026-05-30', filename: '2026-05-30.md', path: 'chatters/2026-05-30.md' },
   { title: '继续把博客当成笔记本来写', date: '2026-05-14', filename: '2026-05-14.md', path: 'chatters/2026-05-14.md' },
   { title: '博客上线记录', date: '2026-05-12', filename: '2026-05-12.md', path: 'chatters/2026-05-12.md' }
 ];
@@ -376,6 +465,80 @@ function parseFrontmatterBlock(md) {
   return result;
 }
 
+function normalizeDateString(value) {
+  var text = String(value || '').trim();
+  var match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!match) return text;
+  return match[1] + '-' + String(match[2]).padStart(2, '0') + '-' + String(match[3]).padStart(2, '0');
+}
+
+function getDateFromFilename(filePath) {
+  var filename = String(filePath || '').split('/').pop();
+  var match = filename.match(/^(\d{4})-(\d{1,2})-(\d{1,2})\.md$/);
+  if (!match) return '';
+  return normalizeDateString(match[1] + '-' + match[2] + '-' + match[3]);
+}
+
+function getFirstMeaningfulLine(text) {
+  var lines = String(text || '').split(/\r?\n/);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    return line.replace(/^#+\s*/, '').trim();
+  }
+  return '';
+}
+
+function stripFirstMeaningfulLine(text) {
+  var lines = String(text || '').split(/\r?\n/);
+  for (var i = 0; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    return lines.slice(i + 1).join('\n').trim();
+  }
+  return String(text || '').trim();
+}
+
+function parseChatterMeta(md, filePath) {
+  var fm = parseFrontmatterBlock(md);
+  var content = fm.content || md;
+  var title = fm.title || '';
+  var date = getDateFromFilename(filePath) || normalizeDateString(fm.date) || '';
+
+  if (!title) {
+    var h1 = content.match(/^#\s+(.+)$/m);
+    if (h1) title = h1[1].trim();
+  }
+
+  if (!title) {
+    title = getFirstMeaningfulLine(content);
+    if (title) content = stripFirstMeaningfulLine(content);
+  }
+
+  return {
+    title: title || '无标题说说',
+    date: date,
+    time: fm.time || '',
+    tags: fm.tags || [],
+    content: content || md
+  };
+}
+
+function preprocessMarkdown(md) {
+  return String(md || '').replace(/!\[\[([^\]]+)\]\]/g, function(match, target) {
+    var normalized = String(target || '').split('|')[0].trim();
+    if (!normalized) return match;
+    if (/\.(png|jpe?g|gif|webp|svg)$/i.test(normalized)) {
+      return '![](' + normalized + ')';
+    }
+    return '\n> 附件：' + normalized + '\n';
+  });
+}
+
+function renderMarkdown(md) {
+  var content = preprocessMarkdown(md);
+  return content.trim() ? marked.parse(content) : '';
+}
+
 function getRelativeTimeText(dateString) {
   if (!dateString) return '等待更新';
   var target = new Date(dateString);
@@ -417,7 +580,7 @@ async function loadHomeMoments() {
       var res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var md = await res.text();
-      var fm = parseFrontmatterBlock(md);
+      var fm = parseChatterMeta(md, file);
       moments.push({
         filename: file,
         title: fm.title || '无标题说说',
@@ -1067,13 +1230,13 @@ async function hydrateHomePanels() {
       const res = await fetch(isChatter && post.path ? post.path : (basePath + filename));
       if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
       const md = await res.text();
-      const fm = parseFrontmatterBlock(md);
+      const fm = isChatter ? parseChatterMeta(md, post.path || filename) : parseFrontmatterBlock(md);
       const articleTitle = fm.title || post.title || '未命名文章';
       const articleDate = fm.date || post.date || '--';
       const articleTags = mergeTags(post.tags, fm.tags);
       const articleContent = fm.content || md;
       const articleText = stripMarkdown(articleContent);
-      const articleHtml = marked.parse(articleContent);
+      const articleHtml = renderMarkdown(articleContent);
       const articleDoc = new DOMParser().parseFromString('<div class="article-prose-root">' + articleHtml + '</div>', 'text/html');
       const headingNodes = Array.from(articleDoc.querySelectorAll('h2, h3'));
       const articleOutline = headingNodes.map(function(heading, headingIndex) {
@@ -1557,7 +1720,7 @@ async function hydrateHomePanels() {
         var res = await fetch(url);
         if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
         var md = await res.text();
-        var fm = parseFrontmatter(md);
+        var fm = parseChatterMeta(md, file);
         moments.push({
           filename: file,
           title: fm.title || '',
@@ -1598,7 +1761,7 @@ async function hydrateHomePanels() {
         '</div>';
       }
 
-      var contentHTML = marked.parse(m.content.trim());
+      var contentHTML = renderMarkdown(m.content.trim());
 
       var titleHTML = '';
       if (m.title) {
