@@ -162,6 +162,14 @@ const chatterList_LEGACY = [
 
 const postList = [
   {
+    title: '赛博千金养成指南：从零搭建专属网安 AI 助理',
+    date: '2026-06-08',
+    filename: '赛博千金养成指南：从零搭建专属网安 AI 助理 (AstrBot + DeepSeek + GPT-SoVITS).md',
+    category: 'AI',
+    tags: ['AstrBot', 'DeepSeek', 'GPT-SoVITS'],
+    summary: '复盘把云端 AstrBot、DeepSeek 和本地 GPT-SoVITS 打通成专属 AI 助理的完整过程。'
+  },
+  {
     title: 'WordPress 安全评估学习笔记',
     date: '2026-06-02',
     filename: 'WordPress 安全评估学习笔记.md',
@@ -236,6 +244,7 @@ const postList = [
 ];
 
 const chatterFiles = [
+  'chatters/2026-06-18.md',
   'chatters/2026-06-1.md',
   'chatters/2026-05-30.md',
   'chatters/2026-05-14.md',
@@ -243,6 +252,7 @@ const chatterFiles = [
 ];
 
 const chatterList = [
+  { title: '该期末复习了', date: '2026-06-18', filename: '2026-06-18.md', path: 'chatters/2026-06-18.md' },
   { title: '今天入坑 Hack The Box', date: '2026-06-01', filename: '2026-06-1.md', path: 'chatters/2026-06-1.md' },
   { title: '御网杯', date: '2026-05-30', filename: '2026-05-30.md', path: 'chatters/2026-05-30.md' },
   { title: '继续把博客当成笔记本来写', date: '2026-05-14', filename: '2026-05-14.md', path: 'chatters/2026-05-14.md' },
@@ -528,7 +538,8 @@ function preprocessMarkdown(md) {
     var normalized = String(target || '').split('|')[0].trim();
     if (!normalized) return match;
     if (/\.(png|jpe?g|gif|webp|svg)$/i.test(normalized)) {
-      return '![](' + normalized + ')';
+      var imagePath = normalized.indexOf('/') === -1 ? 'images/' + normalized : normalized;
+      return '![](' + imagePath + ')';
     }
     return '\n> 附件：' + normalized + '\n';
   });
