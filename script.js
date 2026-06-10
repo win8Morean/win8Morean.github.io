@@ -146,20 +146,6 @@ const postList_LEGACY = [
   }
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   Chatter Files — 说说页面的 Markdown 文件列表
-   新增说说时：把新 md 文件的路径加到这个数组即可。
-   ═══════════════════════════════════════════════════════════════ */
-const chatterFiles_LEGACY = [
-  'chatters/2026-05-12.md',
-  'chatters/2026-05-14.md'
-];
-
-const chatterList_LEGACY = [
-  { title: '继续把博客当成笔记本来写', date: '2026-05-14', filename: '2026-05-14.md', path: 'chatters/2026-05-14.md' },
-  { title: '博客上线记录', date: '2026-05-12', filename: '2026-05-12.md', path: 'chatters/2026-05-12.md' }
-];
-
 const postList = [
   {
     title: '赛博千金养成指南：从零搭建专属网安 AI 助理',
@@ -243,14 +229,6 @@ const postList = [
   }
 ];
 
-const chatterFiles = [
-  'chatters/2026-06-18.md',
-  'chatters/2026-06-1.md',
-  'chatters/2026-05-30.md',
-  'chatters/2026-05-14.md',
-  'chatters/2026-05-12.md'
-];
-
 const chatterList = [
   { title: '该期末复习了', date: '2026-06-18', filename: '2026-06-18.md', path: 'chatters/2026-06-18.md' },
   { title: '今天入坑 Hack The Box', date: '2026-06-01', filename: '2026-06-1.md', path: 'chatters/2026-06-1.md' },
@@ -282,7 +260,6 @@ const photoAlbum = {
 
 const siteStartDate = '2026-05-12T00:00:00';
 
-let homeMomentsCache = [];
 let archiveFilterState = { category: 'all', tag: 'all', search: '' };
 
 function getArchivePosts() {
@@ -383,7 +360,6 @@ const navSearchPages = [
   { type: 'page', title: '归档', meta: 'ARCHIVE', action: 'writeups', keywords: ['归档', '文章', 'writeup', 'writeups', 'archive'] },
   { type: 'page', title: '照片墙', meta: 'PHOTOS', action: 'photos', keywords: ['照片', '相册', 'photos', 'photo'] },
   { type: 'page', title: '音乐', meta: 'MUSIC', action: 'music', keywords: ['音乐', 'music', '歌'] },
-  { type: 'page', title: '说说', meta: 'MOMENTS', action: 'moments', keywords: ['说说', 'moments', '动态'] },
   { type: 'page', title: '杂谈', meta: 'CHATTER', action: 'chatter', keywords: ['杂谈', 'chatter', '博客'] },
   { type: 'page', title: '友链', meta: 'FRIENDS', action: 'friends', keywords: ['友链', 'friends'] },
   { type: 'page', title: '关于', meta: 'ABOUT', action: 'about', keywords: ['关于', 'about', '我'] }
@@ -525,7 +501,7 @@ function parseChatterMeta(md, filePath) {
   }
 
   return {
-    title: title || '无标题说说',
+    title: title || '无标题杂谈',
     date: date,
     time: fm.time || '',
     tags: fm.tags || [],
@@ -580,43 +556,6 @@ function getSiteUptimeText() {
   return days + ' 天 ' + hours + ' 小时';
 }
 
-async function loadHomeMoments() {
-  if (homeMomentsCache.length) return homeMomentsCache;
-
-  const moments = [];
-  for (var i = 0; i < chatterFiles.length; i++) {
-    var file = chatterFiles[i];
-    try {
-      var url = file + '?t=' + Date.now();
-      var res = await fetch(url);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      var md = await res.text();
-      var fm = parseChatterMeta(md, file);
-      moments.push({
-        filename: file,
-        title: fm.title || '无标题说说',
-        date: fm.date || '',
-        time: fm.time || '',
-        tags: fm.tags || [],
-        content: fm.content || md
-      });
-    } catch (err) {
-      console.warn('home moment load failed: ' + file, err);
-    }
-  }
-
-  moments.sort(function(a, b) {
-    var da = (a.date || '') + (a.time || '00:00');
-    var db = (b.date || '') + (b.time || '00:00');
-    if (da > db) return -1;
-    if (da < db) return 1;
-    return 0;
-  });
-
-  homeMomentsCache = moments;
-  return moments;
-}
-
 async function buildSearchIndex() {
   var entries = navSearchPages.map(function(item) {
     return {
@@ -651,20 +590,6 @@ async function buildSearchIndex() {
     });
   });
 
-  try {
-    var moments = await loadHomeMoments();
-    moments.slice(0, 8).forEach(function(moment) {
-      entries.push({
-        type: 'moment',
-        title: moment.title || stripMarkdown(moment.content).slice(0, 16) || '说说',
-        meta: '说说 · ' + (moment.date || ''),
-        action: 'moments',
-        desc: stripMarkdown(moment.content).slice(0, 72) || '切换到说说页，看看最近的近况记录。',
-        keywords: [moment.title, moment.date, (moment.tags || []).join(' '), stripMarkdown(moment.content).slice(0, 80), '说说'].join(' ')
-      });
-    });
-  } catch (err) {}
-
   return entries;
 }
 
@@ -674,9 +599,9 @@ async function hydrateHomePanels() {
 
   var writeupMetaEl = document.getElementById('featuredWriteupMeta');
   var writeupDescEl = document.getElementById('featuredWriteupDesc');
-  var momentTitleEl = document.getElementById('featuredMomentTitle');
-  var momentMetaEl = document.getElementById('featuredMomentMeta');
-  var momentDescEl = document.getElementById('featuredMomentDesc');
+  var chatterTitleEl = document.getElementById('featuredChatterTitle');
+  var chatterMetaEl = document.getElementById('featuredChatterMeta');
+  var chatterDescEl = document.getElementById('featuredChatterDesc');
   var storyPrimaryTitleEl = document.getElementById('homeStoryPrimaryTitle');
   var storyPrimaryMetaEl = document.getElementById('homeStoryPrimaryMeta');
   var storySecondaryTitleEl = document.getElementById('homeStorySecondaryTitle');
@@ -696,7 +621,7 @@ async function hydrateHomePanels() {
   var thumbsEl = document.getElementById('homeGalleryThumbs');
 
   var postCountEl = document.getElementById('homePostCount');
-  var momentCountEl = document.getElementById('homeMomentCount');
+  var chatterCountEl = document.getElementById('homeChatterCount');
   var photoCountEl = document.getElementById('homePhotoCount');
   var lastUpdateEl = document.getElementById('homeLastUpdate');
   var uptimeEl = document.getElementById('homeUptime');
@@ -707,6 +632,7 @@ async function hydrateHomePanels() {
 
   var latestPost = postList[0];
   var secondPost = postList[1];
+  var latestChatter = chatterList[0];
   var htbLatest = getLatestArchivePost('all', 'HTB');
   var webLatest = getLatestArchivePost('Web', 'all');
   var eventLatest = getLatestArchivePost('all', 'LitCTF');
@@ -766,6 +692,7 @@ async function hydrateHomePanels() {
   }).join('');
 
   postCountEl.textContent = String(postList.length);
+  chatterCountEl.textContent = String(chatterList.length);
   photoCountEl.textContent = String(photoAlbum.photos.length);
   uptimeEl.textContent = getSiteUptimeText();
   if (runtimeEl) runtimeEl.textContent = 'UP ' + getSiteUptimeText();
@@ -773,34 +700,19 @@ async function hydrateHomePanels() {
   var latestDates = [];
   if (latestPost && latestPost.date) latestDates.push(latestPost.date);
 
-  try {
-    var moments = await loadHomeMoments();
-    momentCountEl.textContent = String(moments.length);
-
-    if (moments[0]) {
-      var latestMoment = moments[0];
-      var momentDatetime = latestMoment.date + (latestMoment.time ? 'T' + latestMoment.time : '');
-      if (latestMoment.date) latestDates.push(momentDatetime);
-
-      momentTitleEl.textContent = latestMoment.title || '最新说说';
-      momentMetaEl.textContent = getRelativeTimeText(momentDatetime || latestMoment.date);
-      momentDescEl.textContent = stripMarkdown(latestMoment.content).slice(0, 72) || '最近的想法和小记录会显示在这里。';
-      if (currentFocusEl) currentFocusEl.textContent = latestPost ? ('最近在整理：' + latestPost.title) : '最近在补 Web 安全和 CTF';
-      if (currentFocusDescEl) currentFocusDescEl.textContent = '最新近况：' + (latestMoment.title || stripMarkdown(latestMoment.content).slice(0, 26));
-    } else {
-      momentTitleEl.textContent = '暂无说说';
-      momentMetaEl.textContent = '等待下一条记录';
-      momentDescEl.textContent = '写下一条新的近况后，这里会自动出现摘要。';
-      if (currentFocusEl) currentFocusEl.textContent = latestPost ? ('最近在整理：' + latestPost.title) : '最近在补 Web 安全和 CTF';
-      if (currentFocusDescEl) currentFocusDescEl.textContent = '如果你是第一次来，首页会优先展示最近整理和长期主线。';
-    }
-  } catch (err) {
-    momentCountEl.textContent = '0';
-    momentTitleEl.textContent = '近况读取失败';
-    momentMetaEl.textContent = '请检查 chatters 目录';
-    momentDescEl.textContent = '当前无法读取近况记录，但其他页面不受影响。';
+  if (latestChatter) {
+    if (latestChatter.date) latestDates.push(latestChatter.date);
+    chatterTitleEl.textContent = latestChatter.title || '最新杂谈';
+    chatterMetaEl.textContent = getRelativeTimeText(latestChatter.date);
+    chatterDescEl.textContent = '打开正文继续看完整短记录。';
     if (currentFocusEl) currentFocusEl.textContent = latestPost ? ('最近在整理：' + latestPost.title) : '最近在补 Web 安全和 CTF';
-    if (currentFocusDescEl) currentFocusDescEl.textContent = '近况读取失败时，建议先从归档和关于页进入。';
+    if (currentFocusDescEl) currentFocusDescEl.textContent = '最新杂谈：' + (latestChatter.title || '随手记录');
+  } else {
+    chatterTitleEl.textContent = '暂无杂谈';
+    chatterMetaEl.textContent = '等待第一条记录';
+    chatterDescEl.textContent = '写下新的短记录后，这里会自动出现入口。';
+    if (currentFocusEl) currentFocusEl.textContent = latestPost ? ('最近在整理：' + latestPost.title) : '最近在补 Web 安全和 CTF';
+    if (currentFocusDescEl) currentFocusDescEl.textContent = '如果你是第一次来，首页会优先展示最近整理和长期主线。';
   }
 
   if (latestDates.length) {
@@ -825,7 +737,7 @@ async function hydrateHomePanels() {
   }
 
   var featuredWriteupCard = document.getElementById('featuredWriteupCard');
-  var featuredMomentCard = document.getElementById('featuredMomentCard');
+  var featuredChatterCard = document.getElementById('featuredChatterCard');
   var homeGalleryLink = document.getElementById('homeGalleryLink');
   var storyPrimaryCard = document.getElementById('homeStoryPrimary');
   var storySecondaryCard = document.getElementById('homeStorySecondary');
@@ -840,9 +752,10 @@ async function hydrateHomePanels() {
       if (postList.length > 0 && typeof window._openWriteupArticle === 'function') return window._openWriteupArticle(0);
     };
   }
-  if (featuredMomentCard) {
-    featuredMomentCard.onclick = function() {
-      if (typeof window.renderMoments === 'function') window.renderMoments();
+  if (featuredChatterCard) {
+    featuredChatterCard.onclick = function() {
+      if (chatterList.length > 0 && typeof window._openChatterArticle === 'function') return window._openChatterArticle(0);
+      if (typeof window.renderChatter === 'function') return window.renderChatter();
     };
   }
   if (homeGalleryLink) {
@@ -1476,8 +1389,8 @@ async function hydrateHomePanels() {
   }
 
   window.renderPhotoAlbum = renderPhotoAlbum;
-  window.renderMoments = renderMoments;
   window.renderArchive = renderArchive;
+  window.renderChatter = renderChatter;
   window.renderAbout = renderAbout;
   window.setArchiveCategoryFilter = function(category) {
     archiveFilterState.category = category || 'all';
@@ -1688,121 +1601,7 @@ async function hydrateHomePanels() {
   }
 
   /* ═══════════════════════════════════════════
-     6. Moments (说说)
-     ═══════════════════════════════════════════ */
-  function renderMoments() {
-    showPage();
-    currentView = 'moments';
-    updateActiveNav('moments');
-    document.title = '说说 | w1n8';
-
-    contentInner.innerHTML =
-      sectionHTML('说说', 'MOMENTS — 近况、碎片和临时想法') +
-      '<div class="moments-shell">' +
-        '<div class="moments-shell-head">' +
-          '<div class="moments-shell-copy">' +
-            '<span class="archive-kicker">Live Fragments</span>' +
-            '<h3 class="moments-shell-title">最近的想法和碎片</h3>' +
-            '<p class="moments-shell-desc">更轻、更短，也更接近当下的状态记录。</p>' +
-          '</div>' +
-        '</div>' +
-        '<div class="moments-list" id="momentsList">' +
-        '<div class="moments-loading">' +
-          '<div class="moments-loading-spin"></div>' +
-          '<p>加载说说中...</p>' +
-        '</div>' +
-        '</div>' +
-      '</div>';
-
-    loadMoments();
-  }
-
-  async function loadMoments() {
-    const container = document.getElementById('momentsList');
-    if (!container) return;
-
-    const moments = [];
-
-    for (var i = 0; i < chatterFiles.length; i++) {
-      var file = chatterFiles[i];
-      console.log('loading chatter: ' + file);
-      try {
-        var url = file + '?t=' + Date.now();
-        var res = await fetch(url);
-        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
-        var md = await res.text();
-        var fm = parseChatterMeta(md, file);
-        moments.push({
-          filename: file,
-          title: fm.title || '',
-          date: fm.date || '',
-          time: fm.time || '',
-          tags: fm.tags || [],
-          content: fm.content || md
-        });
-        console.log('chatter loaded: ' + file);
-      } catch (err) {
-        console.warn('chatter load failed: ' + file, err);
-      }
-    }
-
-    moments.sort(function(a, b) {
-      var da = a.date + (a.time || '00:00');
-      var db = b.date + (b.time || '00:00');
-      if (da > db) return -1;
-      if (da < db) return 1;
-      return 0;
-    });
-
-    if (moments.length === 0) {
-      container.innerHTML = '<div class="post-list-empty">还没有新的近况记录，先去看看归档和专题入口也不错。</div>';
-      return;
-    }
-
-    container.innerHTML = moments.map(function(m, index) {
-      var dateDisplay = m.date;
-      if (m.time) dateDisplay += ' ' + m.time;
-
-      var tagsHTML = '';
-      if (m.tags.length > 0) {
-        tagsHTML = '<div class="moment-tags">' +
-          m.tags.map(function(t) {
-            return '<span class="moment-tag">#' + t + '</span>';
-          }).join('') +
-        '</div>';
-      }
-
-      var contentHTML = renderMarkdown(m.content.trim());
-
-      var titleHTML = '';
-      if (m.title) {
-        titleHTML = '<h3 class="moment-title">' + m.title + '</h3>';
-      }
-
-      return '' +
-        '<div class="moment-card">' +
-          '<div class="moment-rail">' +
-            '<span class="moment-rail-dot"></span>' +
-            '<span class="moment-rail-line' + (index === moments.length - 1 ? ' is-last' : '') + '"></span>' +
-          '</div>' +
-          '<div class="moment-header">' +
-            '<div class="moment-avatar">' +
-              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
-            '</div>' +
-            '<div class="moment-meta">' +
-              '<span class="moment-author">w1n8</span>' +
-              '<span class="moment-time">' + dateDisplay + '</span>' +
-            '</div>' +
-          '</div>' +
-          titleHTML +
-          '<div class="moment-body">' + contentHTML + '</div>' +
-          tagsHTML +
-        '</div>';
-    }).join('');
-  }
-
-  /* ═══════════════════════════════════════════
-     7. Chatter (杂谈) — .md loading + Giscus
+     6. Chatter (杂谈) — .md loading + Giscus
      ═══════════════════════════════════════════ */
   function renderChatter() {
     showPage();
@@ -2073,7 +1872,6 @@ async function hydrateHomePanels() {
         case 'writeups': renderArchive(); break;
         case 'photos':   renderPhotos(); break;
         case 'music':    renderMusic(); break;
-        case 'moments':  renderMoments(); break;
         case 'chatter':  renderChatter(); break;
         case 'friends':  renderFriends(); break;
         case 'about':    renderAbout(); break;

@@ -1733,8 +1733,7 @@ body {
 .archive-hero-main,
 .archive-side-card,
 .archive-entry,
-.chatter-note,
-.moments-shell {
+.chatter-note {
   background: var(--white-glass);
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
@@ -1769,7 +1768,6 @@ body {
   line-height: 1.12;
 }
 .archive-hero-desc,
-.moments-shell-desc,
 .archive-entry-desc,
 .chatter-note-desc {
   font-size: 14px;
@@ -1858,8 +1856,7 @@ body {
   color: var(--slate-500);
 }
 .archive-entry-title,
-.chatter-note-title,
-.moments-shell-title {
+.chatter-note-title {
   font-size: 22px;
   font-weight: 900;
   color: var(--slate-900);
@@ -2154,92 +2151,7 @@ body {
 }
 
 /* ──────────────────────────────────────────
-   9. Moment Cards
-   ────────────────────────────────────────── */
-.moments-list { display: flex; flex-direction: column; gap: 16px; }
-.moments-shell {
-  border-radius: 30px;
-  padding: 26px 24px;
-}
-.moments-shell-head {
-  margin-bottom: 14px;
-}
-.moments-shell-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.moments-loading {
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  padding: 48px 0; color: var(--slate-500); font-size: 13px;
-}
-.moments-loading-spin {
-  width: 28px; height: 28px; border-radius: 50%;
-  border: 2px solid var(--border-glass);
-  border-top-color: var(--accent);
-  animation: momentsSpin 0.7s linear infinite;
-}
-@keyframes momentsSpin { to { transform: rotate(360deg); } }
-.moment-card {
-  background: var(--white-glass);
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border: 1px solid var(--border-glass); border-radius: 24px;
-  box-shadow: var(--shadow-card); padding: 24px 24px 24px 54px;
-  transition: all var(--ease-smooth);
-  position: relative;
-}
-.moment-card:hover { box-shadow: var(--shadow-hover); }
-.moment-rail {
-  position: absolute;
-  left: 20px;
-  top: 0;
-  bottom: 0;
-  width: 18px;
-}
-.moment-rail-dot {
-  position: absolute;
-  top: 32px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(135deg,var(--accent),var(--purple));
-  box-shadow: 0 0 0 6px rgba(99,102,241,0.08);
-}
-.moment-rail-line {
-  position: absolute;
-  top: 44px;
-  left: 7px;
-  bottom: -26px;
-  width: 2px;
-  background: linear-gradient(180deg, rgba(99,102,241,0.22), rgba(99,102,241,0.02));
-}
-.moment-rail-line.is-last { display: none; }
-.moment-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.moment-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: linear-gradient(135deg,var(--accent),var(--purple));
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 14px; font-weight: 700;
-  flex-shrink: 0;
-}
-.moment-meta { display: flex; flex-direction: column; }
-.moment-author { font-size: 14px; font-weight: 700; color: var(--slate-900); }
-.moment-time { font-size: 11px; color: var(--slate-500); font-family: var(--font-mono); }
-.moment-title { font-size: 17px; font-weight: 800; color: var(--slate-900); margin: 0 0 10px 0; letter-spacing: -0.01em; }
-.moment-body { font-size: 15px; color: var(--slate-700); line-height: 1.8; font-family: var(--font-serif); }
-.moment-body p { margin-bottom: 8px; }
-.moment-body p:last-child { margin-bottom: 0; }
-.moment-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-.moment-tag {
-  font-size: 11px; font-weight: 700; padding: 4px 10px;
-  border-radius: var(--radius-full);
-  background: rgba(99,102,241,0.06); color: var(--accent);
-}
-
-/* ──────────────────────────────────────────
-   10. Chatter Cards
+   9. Chatter Cards
    ────────────────────────────────────────── */
 .chatter-board {
   display: grid;
@@ -3706,7 +3618,6 @@ body {
     padding: 14px;
   }
   .archive-hero-title,
-  .moments-shell-title,
   .archive-entry-title,
   .chatter-note-title {
     font-size: 20px;
@@ -3733,17 +3644,6 @@ body {
     border-radius: 24px;
     padding: 18px;
   }
-  .moments-shell {
-    border-radius: 24px;
-    padding: 20px 18px;
-  }
-  .moment-card {
-    padding: 20px 18px 20px 46px;
-  }
-  .moment-rail {
-    left: 16px;
-  }
-
   /* ── Photos ── */
   .photos-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .photo-album-card { padding: 16px; }
@@ -4004,7 +3904,6 @@ body {
     padding: 18px 16px;
   }
   .archive-hero-title,
-  .moments-shell-title,
   .archive-entry-title,
   .chatter-note-title,
   .showcase-hero-title,
@@ -4013,7 +3912,6 @@ body {
     font-size: 17px;
   }
   .archive-hero-desc,
-  .moments-shell-desc,
   .archive-entry-desc,
   .chatter-note-desc,
   .showcase-hero-desc,
@@ -4031,24 +3929,6 @@ body {
   .archive-entry {
     border-radius: 20px;
     padding: 16px 14px;
-  }
-  .moments-shell {
-    padding: 18px 14px;
-  }
-  .moment-card {
-    border-radius: 20px;
-    padding: 18px 14px 18px 40px;
-  }
-  .moment-rail {
-    left: 12px;
-  }
-  .moment-rail-dot {
-    width: 10px;
-    height: 10px;
-    left: 2px;
-  }
-  .moment-rail-line {
-    left: 6px;
   }
   .chatter-note {
     border-radius: 20px;
