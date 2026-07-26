@@ -52,6 +52,9 @@
     script.setAttribute('data-loading', 'lazy');
     script.crossOrigin = 'anonymous';
     script.async = true;
+    script.onerror = function() {
+      container.innerHTML = '<div class="giscus-placeholder">留言板暂时不可用，稍后再试。</div>';
+    };
     container.appendChild(script);
   }
 
@@ -999,9 +1002,9 @@
     document.title = '关于 | w1n8';
 
     contentInner.innerHTML =
-      sectionHTML('关于', 'ABOUT — 我现在在学什么，也想把这里写成什么样子') +
+      sectionHTML('关于', 'ABOUT — 我现在在学什么，也想把这里写成什么样子').replace('section-header', 'section-header section-header--about') +
       '<div class="about-wrapper">' +
-        '<div class="about-banner">' +
+      '<div class="about-banner glass-panel">' +
           '<div class="about-banner-main">' +
             '<div class="about-banner-avatar">' +
               '<img src="images/tomori.jpg" alt="w1n8">' +
@@ -1026,9 +1029,13 @@
             '</div>' +
           '</div>' +
         '</div>' +
+        '<div class="status-card">' +
+          '<div class="status-indicator"></div>' +
+          '<div class="status-text">[Live Status] 状态：正在学习Web 代码审计...</div>' +
+        '</div>' +
 
         '<div class="about-grid">' +
-          '<div class="about-card about-card--research">' +
+          '<div class="about-card about-card--research glass-panel">' +
             '<div class="about-card-icon">' +
               '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' +
             '</div>' +
@@ -1051,7 +1058,7 @@
               '</div>' +
             '</div>' +
           '</div>' +
-          '<div class="about-card about-card--arsenal">' +
+          '<div class="about-card about-card--arsenal glass-panel">' +
             '<div class="about-card-icon">' +
               '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>' +
             '</div>' +
@@ -1068,51 +1075,19 @@
               '<span class="about-tag-pill">SQLMap</span>' +
             '</div>' +
           '</div>' +
-          '<div class="about-card about-card--roadmap">' +
-            '<div class="about-card-icon">' +
-              '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+          '<div class="about-card about-card--roadmap terminal-card glass-panel">' +
+            '<div class="terminal-header">' +
+              '<span class="mac-dot red"></span><span class="mac-dot yellow"></span><span class="mac-dot green"></span>' +
             '</div>' +
-            '<h3 class="about-card-title">学习路线</h3>' +
-            '<div class="about-roadmap-list">' +
-              '<div class="about-roadmap-item done">' +
-                '<span class="about-roadmap-dot"></span>' +
-                '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">Linux 基础与常用命令</span>' +
-                  '<span class="about-roadmap-status done-text">已完成</span>' +
-                '</div>' +
-              '</div>' +
-              '<div class="about-roadmap-item done">' +
-                '<span class="about-roadmap-dot"></span>' +
-                '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">Web 安全常见漏洞梳理</span>' +
-                  '<span class="about-roadmap-status done-text">已完成</span>' +
-                '</div>' +
-              '</div>' +
-              '<div class="about-roadmap-item active">' +
-                '<span class="about-roadmap-dot"></span>' +
-                '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">CTF Web / Misc 题型积累</span>' +
-                  '<div class="about-progress-bar"><div class="about-progress-fill" style="width:55%"></div></div>' +
-                  '<span class="about-roadmap-status">55%</span>' +
-                '</div>' +
-              '</div>' +
-              '<div class="about-roadmap-item">' +
-                '<span class="about-roadmap-dot"></span>' +
-                '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">Python 自动化脚本整理</span>' +
-                  '<span class="about-roadmap-status pending-text">持续推进</span>' +
-                '</div>' +
-              '</div>' +
-              '<div class="about-roadmap-item">' +
-                '<span class="about-roadmap-dot"></span>' +
-                '<div class="about-roadmap-info">' +
-                  '<span class="about-roadmap-name">漏洞复现与长期笔记沉淀</span>' +
-                  '<span class="about-roadmap-status pending-text">日常积累</span>' +
-                '</div>' +
-              '</div>' +
+            '<div class="terminal-body">' +
+              '<div class="term-line">w1n8@cyber-sec:~$ ./show_new_roadmap.sh</div>' +
+              '<div class="term-line">&gt; [██████████░░] Web/Misc 基础夯实 80%</div>' +
+              '<div class="term-line">&gt; [██████░░░░░░] 信息安全竞赛作品开发 50%</div>' +
+              '<div class="term-line">&gt; [██░░░░░░░░░░] 自动化渗透工具编写 20%</div>' +
+              '<div class="term-line cursor-blink">_</div>' +
             '</div>' +
           '</div>' +
-          '<div class="about-card about-card--writing">' +
+          '<div class="about-card about-card--writing glass-panel">' +
             '<div class="about-card-icon">' +
               '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
             '</div>' +
@@ -1132,8 +1107,12 @@
               '</div>' +
             '</div>' +
           '</div>' +
+          '<div class="about-card github-card glass-panel">' +
+            '<div class="card-title"><span class="icon">🐙</span> GitHub Contributions</div>' +
+            '<img class="gh-chart" src="https://ghchart.rshah.org/w1n8" alt="w1n8\'s GitHub Chart" />' +
+          '</div>' +
         '</div>' +
-        '<div class="about-comments" id="aboutComments">' +
+        '<div class="about-comments glass-panel" id="aboutComments">' +
           '<div class="about-comments-header">' +
             '<h3>留言板</h3>' +
             '<p>欢迎交流学习路线、题解思路，或者顺手来交换友链。</p>' +
@@ -1147,6 +1126,19 @@
     _aboutGiscusTimer = setTimeout(function() {
       loadGiscus(document.getElementById('aboutGiscus'), document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
     }, 200);
+
+    var ghChart = contentInner.querySelector('.gh-chart');
+    if (ghChart) {
+      ghChart.addEventListener('error', function() {
+        if (ghChart.dataset.fallbackShown === '1') return;
+        ghChart.dataset.fallbackShown = '1';
+        ghChart.style.display = 'none';
+        var fallback = document.createElement('div');
+        fallback.className = 'gh-chart-fallback';
+        fallback.textContent = 'GitHub contributions chart unavailable.';
+        ghChart.insertAdjacentElement('afterend', fallback);
+      }, { once: true });
+    }
   }
 
   /* ═══════════════════════════════════════════
