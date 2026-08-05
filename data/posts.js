@@ -1,5 +1,18 @@
 window.BLOG_POST_LIST = [
   {
+    "title": "WebGoat 2025.3 通关教程",
+    "date": "2026-08-05",
+    "filename": "WebGoat-2025.3-通关教程.md",
+    "category": "Practice",
+    "tags": [
+      "WebGoat",
+      "Web",
+      "Security",
+      "Writeup"
+    ],
+    "summary": "记录 WebGoat 2025.3 靶场环境搭建、代理配置和部分课程通关思路。"
+  },
+  {
     "title": "渗透测试 · 信息收集",
     "date": "2026-07-26",
     "filename": "渗透测试-信息收集.md",
