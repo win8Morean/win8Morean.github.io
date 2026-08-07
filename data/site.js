@@ -43,5 +43,8 @@ window.BLOG_SITE_DATA = {
       email: "mailto:zyx20070827@163.com"
     }
   },
+  twikoo: {
+    envId: "https://comment.w1n8.cc"
+  },
   siteStartDate: "2026-05-12T00:00:00"
 };

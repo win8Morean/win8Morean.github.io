@@ -3249,13 +3249,15 @@ body {
   font-family: var(--font-serif); font-size: 13px;
   color: var(--about-surface-text);
 }
-#aboutGiscus { min-height: 200px; }
+#aboutTwikoo { min-height: 200px; }
 
 /* ──────────────────────────────────────────
-   15. Giscus Comments
+   15. Comment Thread
    ────────────────────────────────────────── */
-.giscus-container { margin-top: 40px; padding-top: 28px; border-top: 1px solid rgba(0,0,0,0.05); }
-.giscus-placeholder { text-align:center; color:var(--slate-500); font-size:14px; padding:32px 0; border-radius:var(--radius-md); background:rgba(99,102,241,0.03); border:1.5px dashed rgba(99,102,241,0.12); }
+.comment-thread-container { margin-top: 40px; padding-top: 28px; border-top: 1px solid rgba(0,0,0,0.05); }
+.comment-thread,
+#tcomment { min-height: 200px; }
+.comment-placeholder { text-align:center; color:var(--slate-500); font-size:14px; padding:32px 0; border-radius:var(--radius-md); background:rgba(99,102,241,0.03); border:1.5px dashed rgba(99,102,241,0.12); }
 
 /* ──────────────────────────────────────────
    16. Floating Mini Player

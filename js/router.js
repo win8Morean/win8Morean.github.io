@@ -13,6 +13,8 @@
 
   let currentView = 'home';
   let currentWriteupIndex = null;
+  let currentArticleRoute = '';
+  let suppressRouteClear = false;
 
   /* ── marked.js config ── */
   marked.setOptions({
@@ -26,56 +28,182 @@
     gfm: true
   });
 
-  /* ── Giscus loader (deduped, cleans up before inserting) ── */
-  var _aboutGiscusTimer = null;
+  /* ── Twikoo loader (deduped) ── */
+  var _aboutCommentTimer = null;
+  var _twikooScriptPromise = null;
   var _articleScrollHandler = null;
 
-  function loadGiscus(container, theme) {
-    if (!container) return;
-    // Remove any existing Giscus scripts / iframes first
-    container.querySelectorAll('script[src*="giscus.app"]').forEach(function(s) { s.remove(); });
-    container.querySelectorAll('iframe').forEach(function(f) {
-      if (f.src && f.src.indexOf('giscus.app') !== -1) f.remove();
+  function ensureTwikooScript() {
+    if (window.twikoo) return Promise.resolve(window.twikoo);
+    if (_twikooScriptPromise) return _twikooScriptPromise;
+    _twikooScriptPromise = new Promise(function(resolve, reject) {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.staticfile.net/twikoo/1.6.41/twikoo.all.min.js';
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      script.onload = function() { resolve(window.twikoo); };
+      script.onerror = function() {
+        if (!script.dataset.fallbackUsed) {
+          script.dataset.fallbackUsed = '1';
+          var fallbackScript = document.createElement('script');
+          fallbackScript.src = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.41/dist/twikoo.all.min.js';
+          fallbackScript.async = true;
+          fallbackScript.crossOrigin = 'anonymous';
+          fallbackScript.onload = function() { resolve(window.twikoo); };
+          fallbackScript.onerror = function() {
+            _twikooScriptPromise = null;
+            reject(new Error('Twikoo script load failed'));
+          };
+          document.head.appendChild(fallbackScript);
+          return;
+        }
+        _twikooScriptPromise = null;
+        reject(new Error('Twikoo script load failed'));
+      };
+      document.head.appendChild(script);
     });
-    var script = document.createElement('script');
-    script.src = 'https://giscus.app/client.js';
-    script.setAttribute('data-repo', 'win8Morean/win8Morean.github.io');
-    script.setAttribute('data-repo-id', 'R_kgDOQNWlaQ');
-    script.setAttribute('data-category', 'Announcements');
-    script.setAttribute('data-category-id', 'DIC_kwDOQNWlac4C8s6j');
-    script.setAttribute('data-strict', '0');
-    script.setAttribute('data-reactions-enabled', '1');
-    script.setAttribute('data-emit-metadata', '0');
-    script.setAttribute('data-input-position', 'bottom');
-    script.setAttribute('data-theme', theme);
-    script.setAttribute('data-lang', 'zh-CN');
-    script.setAttribute('data-loading', 'lazy');
-    script.crossOrigin = 'anonymous';
-    script.async = true;
-    script.onerror = function() {
-      container.innerHTML = '<div class="giscus-placeholder">留言板暂时不可用，稍后再试。</div>';
-    };
-    container.appendChild(script);
+    return _twikooScriptPromise;
+  }
+
+  function renderCommentPlaceholder(container, message) {
+    container.innerHTML = '<div class="comment-placeholder">' + escapeHtmlText(message || '评论加载失败') + '</div>';
+  }
+
+  function loadTwikoo(container, path) {
+    if (!container) return;
+    if (!container.id) {
+      container.id = 'twikoo-' + Math.random().toString(36).slice(2, 10);
+    }
+    var selector = '#' + container.id;
+    var envId = window.BLOG_DATA && window.BLOG_DATA.twikoo && window.BLOG_DATA.twikoo.envId ? window.BLOG_DATA.twikoo.envId : '';
+    if (!envId) {
+      renderCommentPlaceholder(container, 'Twikoo envId 未配置');
+      return;
+    }
+    container.innerHTML = '<div class="comment-placeholder">加载评论中...</div>';
+    ensureTwikooScript().then(function() {
+      container.innerHTML = '';
+      if (!window.twikoo || typeof window.twikoo.init !== 'function') {
+        renderCommentPlaceholder(container, '评论组件不可用');
+        return;
+      }
+      window.twikoo.init({
+        envId: envId,
+        el: selector,
+        path: path
+      });
+    }).catch(function() {
+      renderCommentPlaceholder(container, '评论加载失败');
+    });
+  }
+
+  function normalizeArticleKey(value) {
+    return String(value || '')
+      .replace(/\\/g, '/')
+      .replace(/^\.?\//, '')
+      .replace(/\.md$/i, '');
+  }
+
+  function getArticleKey(source, post, index) {
+    var raw = source === 'chatter'
+      ? (post.path || post.filename || post.title || ('item-' + index))
+      : (post.filename || post.path || post.title || ('item-' + index));
+    raw = normalizeArticleKey(raw);
+    if (source === 'writeups' && raw.indexOf('posts/') === 0) {
+      raw = raw.slice(6);
+    }
+    if (source === 'chatter' && raw.indexOf('chatters/') === 0) {
+      raw = raw.slice(9);
+    }
+    return raw || (source + '-' + index);
+  }
+
+  function buildArticleRoute(source, post, index) {
+    return '#/' + source + '/' + encodeURIComponent(getArticleKey(source, post, index));
+  }
+
+  function parseArticleRoute() {
+    var hash = window.location.hash || '';
+    if (!hash) return null;
+    var route = hash.replace(/^#\/?/, '');
+    if (!route) return null;
+    var parts = route.split('/');
+    if (parts.length < 2) return null;
+    var source = parts[0];
+    if (source !== 'writeups' && source !== 'chatter') return null;
+    var encodedKey = parts.slice(1).join('/');
+    var key = encodedKey;
+    try {
+      key = decodeURIComponent(encodedKey);
+    } catch (e) {}
+    return { source: source, key: key };
+  }
+
+  function findArticleIndexByKey(source, key) {
+    var list = source === 'chatter' ? chatterList : postList;
+    return list.findIndex(function(post, index) {
+      return getArticleKey(source, post, index) === key;
+    });
+  }
+
+  function syncArticleRoute(source, post, index, replace) {
+    var route = buildArticleRoute(source, post, index);
+    currentArticleRoute = route;
+    if (window.location.hash === route) return;
+    if (replace && window.history && history.replaceState) {
+      history.replaceState(null, '', route);
+      return;
+    }
+    window.location.hash = route;
+  }
+
+  function clearArticleRoute() {
+    currentArticleRoute = '';
+    if (!window.location.hash) return;
+    if (window.history && history.replaceState) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    } else {
+      window.location.hash = '';
+    }
+  }
+
+  function openRouteArticle(source, index, replace) {
+    suppressRouteClear = true;
+    if (source === 'writeups') {
+      renderArchive();
+    } else if (source === 'chatter') {
+      renderChatter();
+    }
+    suppressRouteClear = false;
+    openArticle(index, source, { syncRoute: false, replaceRoute: replace });
   }
 
   /* ── View Transitions ── */
   function showHome() {
+    var hadArticle = articleOverlay.classList.contains('visible');
     homeView.classList.remove('hidden');
     contentView.classList.remove('visible');
     articleOverlay.classList.remove('visible');
     currentView = 'home';
     updateActiveNav('home');
     document.title = 'w1n8 | Web Security';
+    if (hadArticle && !suppressRouteClear) {
+      clearArticleRoute();
+    }
   }
 
   function showPage() {
+    var hadArticle = articleOverlay.classList.contains('visible');
     homeView.classList.add('hidden');
     articleOverlay.classList.remove('visible');
     contentView.classList.add('visible');
     contentView.scrollTop = 0;
     document.body.classList.remove('route-about');
-    // Cancel any pending About Giscus timer
-    if (_aboutGiscusTimer) { clearTimeout(_aboutGiscusTimer); _aboutGiscusTimer = null; }
+    // Cancel any pending About comment timer
+    if (_aboutCommentTimer) { clearTimeout(_aboutCommentTimer); _aboutCommentTimer = null; }
+    if (hadArticle && !suppressRouteClear) {
+      clearArticleRoute();
+    }
   }
 
   function showArticle() {
@@ -88,14 +216,13 @@
       articleBody.removeEventListener('scroll', _articleScrollHandler);
       _articleScrollHandler = null;
     }
-    // Clean up Giscus iframe in article body to stop polling
+    // Clear article comments when leaving the reader
     var ab = document.getElementById('articleBody');
     if (ab) {
-      ab.querySelectorAll('script[src*="giscus.app"]').forEach(function(s) { s.remove(); });
-      ab.querySelectorAll('iframe').forEach(function(f) {
-        if (f.src && f.src.indexOf('giscus.app') !== -1) f.remove();
-      });
+      var commentBox = ab.querySelector('.comment-thread');
+      if (commentBox) commentBox.innerHTML = '';
     }
+    clearArticleRoute();
   }
 
   /* ── Active Nav State ── */
@@ -190,7 +317,7 @@
   }
 
   /* ═══════════════════════════════════════════
-     3. Writeups (Archives) — uses .md loading + Giscus
+     3. Writeups (Archives) — uses .md loading + comments
      ═══════════════════════════════════════════ */
   function renderArchive() {
     showPage();
@@ -370,19 +497,27 @@
   }
 
   /* ── Article Reader (shared by Writeups & Chatter) ── */
-  async function openArticle(index, source) {
+  async function openArticle(index, source, options) {
+    options = options || {};
     const isChatter = source === 'chatter';
     const post = isChatter ? chatterList[index] : postList[index];
     const basePath = isChatter ? 'chatters/' : 'posts/';
     const filename = isChatter
       ? (post.path ? post.path.split('/').pop() : post.filename)
       : post.filename;
+    const articleKey = getArticleKey(source, post, index);
+    const route = buildArticleRoute(source, post, index);
     const sectionName = isChatter ? '云端杂谈' : '归档文章';
 
     articlePath.textContent = '~/' + source + '/' + filename;
     articleBody.innerHTML = '<div class="article-loading">Loading ' + filename + ' ...</div>';
     currentWriteupIndex = index;
+    currentArticleRoute = route;
     showArticle();
+
+    if (options.syncRoute !== false) {
+      syncArticleRoute(source, post, index, !!options.replaceRoute);
+    }
 
     function getMergedChapterTitle(sourceFile, chapterIndex) {
       var name = String(sourceFile || '').split('/').pop().replace(/\.md$/i, '');
@@ -408,6 +543,7 @@
       const articleDate = fm.date || post.date || '--';
       const articleTags = mergeTags(post.tags, fm.tags);
       const articleContent = fm.content || md;
+      document.title = articleTitle + ' | w1n8';
       const articleText = stripMarkdown(articleContent);
       const articleHtml = renderMarkdown(articleContent);
       let articleOutline = [];
@@ -524,7 +660,7 @@
           '<div class="article-cover-meta">' +
             '<span>' + escapeHtmlText(articleDate) + '</span>' +
             '<span>' + readingMinutes + ' min read</span>' +
-            '<span>' + escapeHtmlText(filename) + '</span>' +
+            '<span>' + escapeHtmlText(articleKey) + '</span>' +
           '</div>' +
           '<div class="article-progress"><span class="article-progress-fill" id="articleProgressFill"></span></div>' +
           '<div class="article-meta-badges">' + articleBadges + '</div>' +
@@ -552,18 +688,19 @@
           '</div>' +
         '</div>';
 
-      /* Giscus comment system */
-      const giscusWrap = document.createElement('div');
-      giscusWrap.className = 'giscus-container';
+      /* Twikoo comment system */
+      const commentWrap = document.createElement('div');
+      commentWrap.className = 'comment-thread-container';
 
-      const giscusDiv = document.createElement('div');
-      giscusDiv.className = 'giscus';
-      giscusWrap.appendChild(giscusDiv);
+      const commentDiv = document.createElement('div');
+      commentDiv.className = 'comment-thread';
+      commentDiv.id = 'tcomment';
+      commentWrap.appendChild(commentDiv);
 
-      articleDiv.appendChild(giscusWrap);
-      loadGiscus(giscusDiv, document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+      articleDiv.appendChild(commentWrap);
       articleBody.innerHTML = '';
       articleBody.appendChild(articleDiv);
+      loadTwikoo(commentDiv, source + '/' + articleKey);
       articleBody.scrollTop = 0;
       if (_articleScrollHandler) {
         articleBody.removeEventListener('scroll', _articleScrollHandler);
@@ -884,7 +1021,7 @@
   }
 
   /* ═══════════════════════════════════════════
-     6. Chatter (杂谈) — .md loading + Giscus
+     6. Chatter (杂谈) — .md loading + comments
      ═══════════════════════════════════════════ */
   function renderChatter() {
     showPage();
@@ -938,6 +1075,30 @@
     var idx = chatterList.findIndex(function(item) { return item.path === path; });
     if (idx >= 0) return openArticle(idx, 'chatter');
   };
+
+  function syncArticleRouteFromHash() {
+    var route = parseArticleRoute();
+    if (!route) {
+      if (articleOverlay.classList.contains('visible')) {
+        hideArticle();
+      }
+      currentArticleRoute = '';
+      return false;
+    }
+
+    if (window.location.hash === currentArticleRoute && articleOverlay.classList.contains('visible')) {
+      return true;
+    }
+
+    var index = findArticleIndexByKey(route.source, route.key);
+    if (index < 0) {
+      clearArticleRoute();
+      return false;
+    }
+
+    openRouteArticle(route.source, index, true);
+    return true;
+  }
 
   /* ── Simple frontmatter parser ── */
   function parseFrontmatter(md) {
@@ -1117,14 +1278,14 @@
             '<h3>留言板</h3>' +
             '<p>欢迎交流学习路线、题解思路，或者顺手来交换友链。</p>' +
           '</div>' +
-          '<div class="giscus" id="aboutGiscus"></div>' +
+          '<div class="comment-thread" id="aboutTwikoo"></div>' +
         '</div>' +
       '</div>';
 
-    /* ── Load Giscus ── */
-    if (_aboutGiscusTimer) clearTimeout(_aboutGiscusTimer);
-    _aboutGiscusTimer = setTimeout(function() {
-      loadGiscus(document.getElementById('aboutGiscus'), document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    /* ── Load Twikoo ── */
+    if (_aboutCommentTimer) clearTimeout(_aboutCommentTimer);
+    _aboutCommentTimer = setTimeout(function() {
+      loadTwikoo(document.getElementById('aboutTwikoo'), 'about');
     }, 200);
 
     var ghChart = contentInner.querySelector('.gh-chart');
@@ -1169,4 +1330,8 @@
   });
 
   hydrateHomePanels();
+  window.addEventListener('hashchange', syncArticleRouteFromHash);
+  if (!syncArticleRouteFromHash()) {
+    renderHome();
+  }
 })();
