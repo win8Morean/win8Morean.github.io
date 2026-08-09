@@ -1,6 +1,14 @@
 .claude/
 .obsidian/
 node_modules/
+.data/
+.nuxt/
+.output/
+dist/
+--port/
+output/
+.playwright-cli/
+*.log
 .env
 .env.local
 .DS_Store
